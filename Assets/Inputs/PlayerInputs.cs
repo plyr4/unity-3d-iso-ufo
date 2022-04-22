@@ -8,6 +8,7 @@ public class PlayerInputs : MonoBehaviour
     public Vector2 look;
     public bool jump;
     public bool sprint;
+    public bool fire;
 
     [Header("Movement Settings")]
     public bool analogMovement;
@@ -40,6 +41,11 @@ public class PlayerInputs : MonoBehaviour
         SprintInput(value.isPressed);
     }
 
+    public void OnFire(InputValue value)
+    {
+        FireInput(value.isPressed);
+    }
+
     public void MoveInput(Vector2 newMoveDirection)
     {
         move = newMoveDirection;
@@ -58,6 +64,11 @@ public class PlayerInputs : MonoBehaviour
     public void SprintInput(bool newSprintState)
     {
         sprint = newSprintState;
+    }
+
+    public void FireInput(bool newFireState)
+    {
+        fire = newFireState;
     }
 
 #if !UNITY_IOS || !UNITY_ANDROID
