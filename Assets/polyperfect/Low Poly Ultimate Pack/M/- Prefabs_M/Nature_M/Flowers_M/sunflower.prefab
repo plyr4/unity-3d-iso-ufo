@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 3344452162302077562}
   - component: {fileID: 7695720236109365814}
   - component: {fileID: 1718977977}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: sunflower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -116,7 +116,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 9009196147552024560}
 --- !u!114 &7695720236109365814
 MonoBehaviour:
   m_ObjectHideFlags: 0

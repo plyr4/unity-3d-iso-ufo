@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6279595159681293434}
   - component: {fileID: 1096826226353204437}
   - component: {fileID: 2334380236675794378}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: tractor-carriag-wheels_B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 1096826226353204437}
 --- !u!1 &1791573165462006
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,7 +161,7 @@ GameObject:
   - component: {fileID: 8553143288401309473}
   - component: {fileID: 6004932088745491531}
   - component: {fileID: 3837416760594269541}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: tractor-carriage-base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -292,7 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 6004932088745491531}
 --- !u!1 &1792149923479866
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,7 +308,7 @@ GameObject:
   - component: {fileID: 4324207549537092618}
   - component: {fileID: 4872829665419289505}
   - component: {fileID: 7003328693524342062}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: tractor-carriag-wheels_F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -438,7 +438,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 4872829665419289505}
 --- !u!1 &1929669125073500
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,7 +448,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4523900657312626}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: tractor-carriage
   m_TagString: Untagged
   m_Icon: {fileID: 0}

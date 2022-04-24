@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 2907478182627594354}
   - component: {fileID: 1653942312518415681}
   - component: {fileID: 2896185920270937038}
-  - component: {fileID: 1021445450410496067}
   - component: {fileID: 7564303022725128142}
-  m_Layer: 0
+  - component: {fileID: -2481208747750713752}
+  m_Layer: 8
   m_Name: sheep-white
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -120,20 +120,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &1021445450410496067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2907478182625398450}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grabbed: 0
-  _rb: {fileID: 0}
 --- !u!114 &7564303022725128142
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -150,3 +136,17 @@ MonoBehaviour:
   angleResolution: 30
   UseRootPixelGrid: 0
   PixelGridMaterialIndices: 
+--- !u!114 &-2481208747750713752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2907478182625398450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _grabbed: 0
+  _rb: {fileID: 2896185920270937038}

@@ -4,52 +4,154 @@ using System.Collections.Generic;
 using System.Linq;
 using VLB;
 
-[RequireComponent(typeof(PlayerInput))]
 [RequireComponent(typeof(PlayerInputs))]
 public class TractorBeam : MonoBehaviour
 {
     private PlayerInputs _input;
-    private PlayerInput _playerInput;
-    private bool IsCurrentDeviceMouse => _playerInput.currentControlScheme == "KeyboardMouse";
 
     [SerializeField]
-    private Light _light;
+    private Light _beamSpotLight;
+
     [SerializeField]
     private VolumetricLightBeam _vlb;
-    private Color _originalSpotLightColor;
-    private Color _originalVLBColor;
+    
+    private Color _originalSpotLightColor, _originalVLBColor;
+
+    float _cachedTime;
+
+    private float _cachedRadius;
+    public float _beamRadius
+    {
+        get
+        {
+            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            return _cachedRadius;
+        }
+    }
+
+    private float _cachedDepth;
+    public float _beamDepth
+    {
+        get
+        {
+            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            return _cachedDepth;
+        }
+    }
+
+    private float _cachedAngle;
+    public float _beamAngle
+    {
+        get
+        {
+            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            return _cachedAngle;
+        }
+    }
+
     [SerializeField]
-    private Color beamUpColor;
+    private float _beamStrength;
+    [SerializeField]
+    private float ConstantBeamStrength;
 
+    //// TODO: improve
 
-    public float radius;
-    public float depth;
-    public float angle;
-
-    public float BeamSpeed;
-    public float DestinationRadius;
-    public float DestinationDepth;
     private Physics physics;
 
-    private RaycastHit[] coneHits;
+    private RaycastHit[] hitsInBeam;
+    int numGrabbed = 0;
+
+    ///// END TODO
+
+    [SerializeField]
+    public bool LockLightProperties = false;
+    [SerializeField]
+    private float VLBSpotAngleModifier = 1f;
+    [SerializeField]
+    private float BeamSpotLightSpotAngleModifier = 0.25f;
+    [SerializeField]
+    private float DestinationRadius;
+    [SerializeField]
+    private float DestinationDepth;
+
+    [SerializeField]
+    private float MaxDepth = 20f;
+    [SerializeField]
+    private float MaxBeamRadius = 4f;
+    [SerializeField]
+    private float BeamRangeModifier = 1.4f;
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float BeamStrengthGrabThreshold = 0.95f;
+    [SerializeField]
+    private float BeamStrengthGrowthRate = 2f;
+
+    [SerializeField]
+    private float BeamSpeed;
+    [SerializeField]
+    private LayerMask GroundLayerMask;
+
+    [SerializeField]
+    private LayerMask BeamableLayerMask;
+
+
+
+    public void LoadDynamicBeamProperties()
+    {
+        _cachedTime = Time.time;
+        _cachedDepth = GetDepth();
+        _cachedRadius = MaxBeamRadius * _cachedDepth / MaxDepth;
+        _cachedAngle = Mathf.Atan(_cachedDepth / _cachedRadius / MaxBeamRadius) * Mathf.Rad2Deg;
+
+        // apply dynamic properties to beam lights
+        if (LockLightProperties && _beamSpotLight != null && _vlb != null)
+        {
+            // spot light range and angles
+            _beamSpotLight.range = _cachedDepth * BeamRangeModifier;
+            _beamSpotLight.spotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+            _beamSpotLight.innerSpotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+
+            // volumetric light shaft range and angle
+            _vlb.spotAngle = _cachedAngle * VLBSpotAngleModifier;
+            _vlb.fallOffEnd = _beamSpotLight.range * 0.5f * (_beamStrength);
+            _vlb.fallOffStart = _vlb.fallOffEnd * 0.95f;
+        }
+    }
 
     private void Start()
     {
+        // player input used for tractor beam triggers
         _input = GetComponent<PlayerInputs>();
-        _playerInput = GetComponent<PlayerInput>();
-        _originalSpotLightColor = _light.color;
+
+        // fetch lights if not explicitly set in the inspector
+        if (_beamSpotLight == null) _beamSpotLight = GetComponentInChildren<Light>();
+        if (_vlb == null) _vlb = GetComponentInChildren<VolumetricLightBeam>();
+
+        // if we dont have lights by now, we deserve to crash
+        _originalSpotLightColor = _beamSpotLight.color;
         _originalVLBColor = _vlb.color;
-        coneHits = new RaycastHit[0];
+
+        // initialize cone raycast hits
+        hitsInBeam = new RaycastHit[100];
+        
+        // initialize beam properties
+        LoadDynamicBeamProperties();
+    }
+
+    float HypotenuseLength(float sideALength, float sideBLength)
+    {
+        return Mathf.Sqrt(sideALength * sideALength + sideBLength * sideBLength);
     }
 
     void FixedUpdate()
     {
+        LoadDynamicBeamProperties();
         // reset cone hits before checking them
-        if (coneHits.Length > 0)
+        if (numGrabbed > 0)
         {
-            for (int i = coneHits.Length - 1; i >= 0; i--)
+            for (int i = numGrabbed - 1; i >= 0; i--)
             {
-                BeamableObject beamable = coneHits[i].collider.gameObject.GetComponent<BeamableObject>();
+                BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
                 if (beamable != null)
                 {
                     beamable.SetGrabbed(false);
@@ -57,33 +159,46 @@ public class TractorBeam : MonoBehaviour
             }
         }
 
-        _light.color = _originalSpotLightColor;
+        // attempt to reset beam
+        _beamSpotLight.color = _originalSpotLightColor;
         _vlb.color = _originalVLBColor;
-        if (_input.fire)
+        
+        // handle beam +/-
+        if(_input.fire) _beamStrength += BeamStrengthGrowthRate * Time.deltaTime;
+        else _beamStrength -= BeamStrengthGrowthRate * Time.deltaTime;
+        _beamStrength = Mathf.Clamp(_beamStrength, 0f, 1f);
+
+        if (ConstantBeamStrength != 0f) _beamStrength = ConstantBeamStrength;
+
+        // check for trigger and strength
+        // if (_input.fire && (_beamStrength >= BeamStrengthGrabThreshold || (ConstantBeamStrength != 0f && _beamStrength >= ConstantBeamStrength)))
+        if (_input.fire && (_beamStrength >= BeamStrengthGrabThreshold || (ConstantBeamStrength != 0f && _beamStrength >= ConstantBeamStrength)))
         {
-            _light.color = beamUpColor;
-            _vlb.color = beamUpColor;
+            _beamSpotLight.color = GameConstants.Instance()._beamAttributes.BeamGrabSpotLightColor;
+            // _vlb.color = BeamUpColor;
 
-            coneHits = physics.ConeCastAll(transform.position, radius, -transform.up, depth, angle);
+            hitsInBeam = physics.ConeCastAll(transform.position, BeamRadius(), BeamDirection(), BeamDistance(), _beamAngle, BeamableLayerMask);
+            numGrabbed = hitsInBeam.Length;
 
-            if (coneHits.Length > 0)
+            if (numGrabbed > 0)
             {
-                for (int i = coneHits.Length - 1; i >= 0; i--)
+                for (int i = numGrabbed - 1; i >= 0; i--)
                 {
-                    if (coneHits[i].collider.gameObject.tag != "Player")
+                    if (hitsInBeam[i].collider.gameObject.tag != "Player")
                     {
-                        BeamableObject beamable = coneHits[i].collider.gameObject.GetComponent<BeamableObject>();
+                        BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
                         if (beamable != null)
                         {
                             beamable.SetGrabbed(true);
-                            coneHits[i].collider.gameObject.transform.position = Vector3.Lerp(coneHits[i].collider.gameObject.transform.position, _light.transform.position, BeamSpeed * Time.deltaTime);
+                            hitsInBeam[i].collider.gameObject.transform.position = Vector3.Lerp(hitsInBeam[i].collider.gameObject.transform.position, _beamSpotLight.transform.position, BeamSpeed * Time.deltaTime);
                         }
                     }
                 }
             }
-            int maxColliders = 10;
+
+            int maxColliders = 20;
             Collider[] hitColliders = new Collider[maxColliders];
-            int numColliders = Physics.OverlapSphereNonAlloc((_light.transform.position + -transform.up * DestinationDepth), radius, hitColliders);
+            int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
             for (int i = numColliders - 1; i >= 0; i--)
             {
                 BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
@@ -92,19 +207,56 @@ public class TractorBeam : MonoBehaviour
                     beamable.gameObject.SetActive(false);
                 }
             }
-
         }
+    }
 
+    // sends Raycast to the terrain and returns either distance to hit or MaxDepth
+    float GetDepth()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, BeamDirection(), out hit, MaxDepth, GroundLayerMask)) return hit.distance;
+        return MaxDepth;
+    }
+
+    Vector3 BeamDirection()
+    {
+        return -transform.up;
+    }
+
+    float BeamDistance() {
+        return _beamDepth * _beamStrength;
+    }
+
+
+    float BeamRadius() {
+        return _beamRadius * _beamStrength;
     }
 
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.red;
-        Vector3 direction = -transform.up;
-        Gizmos.DrawRay(transform.position, direction * depth);
-        Gizmos.DrawWireSphere((transform.position) + direction * depth, radius);
+        DrawBeamDepthRay();
+        DrawBeamDestinationSphere();
+        DrawBeamPickupSphere();
+    }
 
-        // draw the destination
-        Gizmos.DrawWireSphere((_light.transform.position + direction * DestinationDepth), DestinationRadius);
+    // draw the ray between the ship and the ground
+    void DrawBeamDepthRay()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawRay(transform.position, BeamDirection() * BeamDistance());
+    }
+
+    // draw the sphere that is used as a cone raycast radius
+    void DrawBeamPickupSphere()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere((transform.position) + BeamDirection() * BeamDistance(), BeamRadius());
+    }
+
+    // draw the sphere that is used as the beam destination
+    void DrawBeamDestinationSphere()
+    {
+        Gizmos.color = new Color(148f, 0f, 211f);
+        Gizmos.DrawWireSphere((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius);
     }
 }

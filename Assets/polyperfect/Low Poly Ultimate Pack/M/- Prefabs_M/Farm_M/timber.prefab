@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 5584914239263957116}
   - component: {fileID: 4638127678089164859}
   - component: {fileID: 3920861919415845642}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: timber
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -144,4 +144,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 4638127678089164859}

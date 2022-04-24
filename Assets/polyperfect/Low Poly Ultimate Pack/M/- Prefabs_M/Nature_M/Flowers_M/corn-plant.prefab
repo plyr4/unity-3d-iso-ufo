@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8679447325035055478}
   - component: {fileID: 8242979246213552930}
   - component: {fileID: 7272410415825589266}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: corn-plant
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -116,7 +116,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 9109299349565796346}
 --- !u!114 &8242979246213552930
 MonoBehaviour:
   m_ObjectHideFlags: 0

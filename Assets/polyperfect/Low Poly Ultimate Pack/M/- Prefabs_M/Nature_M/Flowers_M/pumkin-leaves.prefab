@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 5601871841963733891}
   - component: {fileID: 639937043334808335}
   - component: {fileID: 4517946923641397585}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: pumkin-leaves
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -128,7 +128,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 5601871841963733891}
 --- !u!114 &4517946923641397585
 MonoBehaviour:
   m_ObjectHideFlags: 0

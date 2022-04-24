@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 public class PlayerInputs : MonoBehaviour
 {
     [Header("Character Input Values")]
-    public Vector2 move;
+    public Vector3 verticalMove;
+    public Vector3 horizontalMove;
     public Vector2 look;
     public bool jump;
     public bool sprint;
@@ -18,9 +19,14 @@ public class PlayerInputs : MonoBehaviour
     public bool cursorLocked = true;
     public bool cursorInputForLook = true;
 #endif
-    public void OnMove(InputValue value)
+    public void OnHorizontalMove(InputValue value)
     {
-        MoveInput(value.Get<Vector2>());
+        HorizontalMoveInput(value.Get<Vector2>());
+    }
+    
+    public void OnVerticalMove(InputValue value)
+    {
+        VerticalMoveInput(value.Get<Vector2>());
     }
 
     public void OnLook(InputValue value)
@@ -46,9 +52,14 @@ public class PlayerInputs : MonoBehaviour
         FireInput(value.isPressed);
     }
 
-    public void MoveInput(Vector2 newMoveDirection)
+    public void HorizontalMoveInput(Vector2 newMoveDirection)
     {
-        move = newMoveDirection;
+        horizontalMove = newMoveDirection;
+    }
+
+    public void VerticalMoveInput(Vector2 newMoveDirection)
+    {
+        verticalMove = newMoveDirection;
     }
 
     public void LookInput(Vector2 newLookDirection)

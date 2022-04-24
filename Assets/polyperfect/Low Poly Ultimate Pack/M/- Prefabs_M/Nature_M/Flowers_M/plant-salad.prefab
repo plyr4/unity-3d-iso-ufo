@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 349486085963189031}
   - component: {fileID: 1187771018050245744}
   - component: {fileID: 5187132667375482706}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: plant-salad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grabbed: 0
-  _rb: {fileID: 0}
+  _rb: {fileID: 349486085963189031}
 --- !u!114 &5187132667375482706
 MonoBehaviour:
   m_ObjectHideFlags: 0
