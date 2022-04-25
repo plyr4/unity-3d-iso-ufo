@@ -19,6 +19,13 @@ public class BeamableObject : MonoBehaviour
     private bool isGrabbed;
     private bool hasSpun;
     private bool isOutlined;
+    private bool isTethered;
+
+    private TractorBeam grabbedBy;
+
+    private GameObject _tether;
+
+    private float MaxVelocity = 2f;
 
     void Start()
     {
@@ -52,13 +59,16 @@ public class BeamableObject : MonoBehaviour
     {
         if (isGrabbed)
         {
-            _rb.useGravity = false;
+            // TODO: joints do not like this
+            // _rb.useGravity = false;
             _rb.isKinematic = false;
 
 
-            // TODO:
+
+            // TODO: joints do not like this
             //  this should stop their movement but not their rotation
-            _rb.velocity = new Vector3(_rb.velocity.x, 0f, _rb.velocity.z);
+
+            _rb.velocity = new Vector3(Mathf.Clamp(_rb.velocity.x, -MaxVelocity, MaxVelocity), Mathf.Clamp(_rb.velocity.y, -MaxVelocity, MaxVelocity), Mathf.Clamp(_rb.velocity.z, -MaxVelocity, MaxVelocity));
 
             // apply random torque once
             if (!hasSpun)
@@ -96,9 +106,32 @@ public class BeamableObject : MonoBehaviour
         gameObject.layer = 8;
     }
 
-    public void SetGrabbed(bool grabbed)
+    public bool IsGrabbed()
+    {
+        return isGrabbed;
+    }
+    public void SetGrabbed(bool grabbed, TractorBeam beam)
     {
         isGrabbed = grabbed;
+        grabbedBy = beam;
+        if (!isTethered)
+        {
+            isTethered = true;
+
+            SpringJoint _springJoint = gameObject.GetComponent<SpringJoint>();
+            if (_springJoint == null) _springJoint = gameObject.AddComponent<SpringJoint>();
+            _springJoint.spring = 100;
+            _springJoint.damper = 100;
+            _springJoint.anchor = Vector3.zero;
+            _springJoint.connectedBody = beam._tetherAnchor;
+            _springJoint.autoConfigureConnectedAnchor = false;
+            _springJoint.connectedAnchor = Vector3.zero;
+        }
+    }
+
+    public void CreateTether()
+    {
+
     }
 
     public void ApplyRandomSpin()

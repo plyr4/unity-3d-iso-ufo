@@ -14,7 +14,7 @@ public class TractorBeam : MonoBehaviour
 
     [SerializeField]
     private VolumetricLightBeam _vlb;
-    
+
     private Color _originalSpotLightColor, _originalVLBColor;
 
     float _cachedTime;
@@ -61,6 +61,11 @@ public class TractorBeam : MonoBehaviour
     private RaycastHit[] hitsInBeam;
     int numGrabbed = 0;
 
+
+    [SerializeField]
+    private Dictionary<int, BeamableObject> grabbedObjects;
+
+
     ///// END TODO
 
     [SerializeField]
@@ -88,11 +93,17 @@ public class TractorBeam : MonoBehaviour
 
     [SerializeField]
     private float BeamSpeed;
+
+    [SerializeField]
+    private float BeamPickupSpeed = 1f;
     [SerializeField]
     private LayerMask GroundLayerMask;
 
     [SerializeField]
     private LayerMask BeamableLayerMask;
+
+    [SerializeField]
+    public Rigidbody _tetherAnchor;
 
 
 
@@ -133,38 +144,35 @@ public class TractorBeam : MonoBehaviour
 
         // initialize cone raycast hits
         hitsInBeam = new RaycastHit[100];
-        
+
+        // initialize beamable objects
+        grabbedObjects = new Dictionary<int, BeamableObject>();
+
         // initialize beam properties
         LoadDynamicBeamProperties();
     }
-
-    float HypotenuseLength(float sideALength, float sideBLength)
-    {
-        return Mathf.Sqrt(sideALength * sideALength + sideBLength * sideBLength);
-    }
-
     void FixedUpdate()
     {
         LoadDynamicBeamProperties();
         // reset cone hits before checking them
-        if (numGrabbed > 0)
-        {
-            for (int i = numGrabbed - 1; i >= 0; i--)
-            {
-                BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
-                if (beamable != null)
-                {
-                    beamable.SetGrabbed(false);
-                }
-            }
-        }
+        // if (numGrabbed > 0)
+        // {
+        //     for (int i = numGrabbed - 1; i >= 0; i--)
+        //     {
+        //         BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
+        //         if (beamable != null)
+        //         {
+        //             beamable.SetGrabbed(false);
+        //         }
+        //     }
+        // }
 
         // attempt to reset beam
         _beamSpotLight.color = _originalSpotLightColor;
         _vlb.color = _originalVLBColor;
-        
+
         // handle beam +/-
-        if(_input.fire) _beamStrength += BeamStrengthGrowthRate * Time.deltaTime;
+        if (_input.fire) _beamStrength += BeamStrengthGrowthRate * Time.deltaTime;
         else _beamStrength -= BeamStrengthGrowthRate * Time.deltaTime;
         _beamStrength = Mathf.Clamp(_beamStrength, 0f, 1f);
 
@@ -189,25 +197,53 @@ public class TractorBeam : MonoBehaviour
                         BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
                         if (beamable != null)
                         {
-                            beamable.SetGrabbed(true);
-                            hitsInBeam[i].collider.gameObject.transform.position = Vector3.Lerp(hitsInBeam[i].collider.gameObject.transform.position, _beamSpotLight.transform.position, BeamSpeed * Time.deltaTime);
+                            if (!beamable.IsGrabbed()) beamable.SetGrabbed(true, this);
+                            AddGrabbedBeamable(beamable);
                         }
                     }
                 }
             }
+        }
+        foreach (int objectID in grabbedObjects.Keys)
+        {
+            Debug.Log(objectID);
+            // grabbedObjects[objectID].gameObject.transform.position = Vector3.Lerp(grabbedObjects[objectID].gameObject.transform.position, _beamSpotLight.transform.position, BeamSpeed * Time.deltaTime);
+            // grabbedObjects[objectID].gameObject.GetComponent<SpringJoint>().maxDistance = Mathf.Lerp(grabbedObjects[objectID].gameObject.GetComponent<SpringJoint>().maxDistance, 0f, BeamPickupSpeed * Time.deltaTime);
+        }
 
-            int maxColliders = 20;
-            Collider[] hitColliders = new Collider[maxColliders];
-            int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
-            for (int i = numColliders - 1; i >= 0; i--)
+        int maxColliders = 20;
+        Collider[] hitColliders = new Collider[maxColliders];
+        int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
+        for (int i = numColliders - 1; i >= 0; i--)
+        {
+            BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
+            if (beamable != null)
             {
-                BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
-                if (beamable != null)
-                {
-                    beamable.gameObject.SetActive(false);
-                }
+                beamable.gameObject.SetActive(false);
+                RemoveGrabbedBeamable(beamable);
+                Destroy(beamable.gameObject);
             }
         }
+    }
+
+    void AddGrabbedBeamable(BeamableObject beamable)
+    {
+        grabbedObjects[beamable.gameObject.GetInstanceID()] = beamable;
+    }
+
+    void RemoveGrabbedBeamable(BeamableObject beamable)
+    {
+        grabbedObjects.Remove(beamable.gameObject.GetInstanceID());
+    }
+
+    void ClearGrabbedBeamables(BeamableObject beamable)
+    {
+        grabbedObjects.Clear();
+    }
+
+    bool InGrabbedBeamables(BeamableObject beamable)
+    {
+        return grabbedObjects.ContainsKey(beamable.gameObject.GetInstanceID());
     }
 
     // sends Raycast to the terrain and returns either distance to hit or MaxDepth
@@ -223,12 +259,14 @@ public class TractorBeam : MonoBehaviour
         return -transform.up;
     }
 
-    float BeamDistance() {
+    float BeamDistance()
+    {
         return _beamDepth * _beamStrength;
     }
 
 
-    float BeamRadius() {
+    float BeamRadius()
+    {
         return _beamRadius * _beamStrength;
     }
 
