@@ -197,34 +197,60 @@ public class TractorBeam : MonoBehaviour
                         BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
                         if (beamable != null)
                         {
-                            if (!beamable.IsGrabbed()) beamable.SetGrabbed(true, this);
+                            if (!beamable.Tethered()) beamable.Tether(this);
                             AddGrabbedBeamable(beamable);
                         }
                     }
                 }
             }
         }
-        foreach (int objectID in grabbedObjects.Keys)
+
+        // released beam
+        if (!_input.fire)
         {
-            Debug.Log(objectID);
-            // grabbedObjects[objectID].gameObject.transform.position = Vector3.Lerp(grabbedObjects[objectID].gameObject.transform.position, _beamSpotLight.transform.position, BeamSpeed * Time.deltaTime);
-            // grabbedObjects[objectID].gameObject.GetComponent<SpringJoint>().maxDistance = Mathf.Lerp(grabbedObjects[objectID].gameObject.GetComponent<SpringJoint>().maxDistance, 0f, BeamPickupSpeed * Time.deltaTime);
+
+                foreach (int objectID in grabbedObjects.Keys.ToList())
+                {
+                    BeamableObject obj = grabbedObjects[objectID];
+                    if (obj.Tethered()) obj.Untether();
+                    RemoveGrabbedBeamable(obj);
+                }
         }
 
-        int maxColliders = 20;
-        Collider[] hitColliders = new Collider[maxColliders];
-        int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
-        for (int i = numColliders - 1; i >= 0; i--)
+        if (_input.altFire)
         {
-            BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
-            if (beamable != null)
+            foreach (int objectID in grabbedObjects.Keys.ToList())
             {
-                beamable.gameObject.SetActive(false);
-                RemoveGrabbedBeamable(beamable);
-                Destroy(beamable.gameObject);
+                BeamableObject obj = grabbedObjects[objectID];
+                obj.RetractJoint();
             }
         }
+
+        foreach (int objectID in grabbedObjects.Keys.ToList())
+        {
+            BeamableObject obj = grabbedObjects[objectID];
+            if (obj.Retracted())
+            {
+                grabbedObjects.Remove(objectID);
+                Destroy(obj.gameObject);
+            }
+        }
+
+        // int maxColliders = 20;
+        // Collider[] hitColliders = new Collider[maxColliders];
+        // int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
+        // for (int i = numColliders - 1; i >= 0; i--)
+        // {
+        //     BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
+        //     if (beamable != null)
+        //     {
+        //         beamable.gameObject.SetActive(false);
+        //         RemoveGrabbedBeamable(beamable);
+        //         Destroy(beamable.gameObject);
+        //     }
+        // }
     }
+
 
     void AddGrabbedBeamable(BeamableObject beamable)
     {

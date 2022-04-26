@@ -9,11 +9,6 @@ public class GameConstants : MonoBehaviour
     [SerializeField]
     public BeamAttributes _beamAttributes;
 
-    public GameConstants()
-    {
-        _beamAttributes = BeamAttributes.DefaultBeamAttributes();
-    }
-
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -34,7 +29,7 @@ public class GameConstants : MonoBehaviour
 
     private void InitBeamAttributes()
     {
-        if (_beamAttributes == null) _beamAttributes = GetComponent<BeamAttributes>();
-        if (_beamAttributes == null) _beamAttributes = BeamAttributes.DefaultBeamAttributes();
+        if (_beamAttributes == null) _beamAttributes = gameObject.GetComponent<BeamAttributes>();
+        if (_beamAttributes == null) _beamAttributes = gameObject.AddComponent<BeamAttributes>().InitializeDefaults();
     }
 }

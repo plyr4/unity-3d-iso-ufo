@@ -3,20 +3,45 @@ using UnityEngine;
 public class BeamAttributes : MonoBehaviour
 {
     [SerializeField]
-    public Color BeamGrabOutlineColor;
+    public Color BeamGrabOutlineColor = Color.yellow;
     [SerializeField]
-    public Color BeamGrabSpotLightColor;
+    public Color BeamGrabSpotLightColor = Color.blue;
 
-    public static BeamAttributes DefaultBeamAttributes()
+    [SerializeField]
+    public float BeamRetractionSpeed = 1f;
+    
+    [SerializeField]
+    public float BeamGrabLinearLimit = 2f;
+    
+    [SerializeField]
+    public float BeamGrabAnchorDepthCoefficient = 0.5f;
+
+    [SerializeField]
+    public ConfigurableJoint BeamableObjectJoint;
+
+    
+    [SerializeField]
+    public bool BeamDrawJoints = false;
+
+    public BeamAttributes InitializeDefaults()
     {
-        BeamAttributes beamAttributes = new BeamAttributes();
-
         // beam up grab outline
-        beamAttributes.BeamGrabOutlineColor = Color.yellow;
+        BeamGrabOutlineColor = Color.yellow;
 
         // beam up ground spotlight
-        beamAttributes.BeamGrabSpotLightColor = Color.blue;
-        return beamAttributes;
+        BeamGrabSpotLightColor = Color.blue;
+
+        // beam retraction speed
+        BeamRetractionSpeed = 1f;
+        
+        // beam grab joint leeway
+        BeamGrabLinearLimit = 2f;
+    
+        // beam grab depth ratio
+        BeamGrabAnchorDepthCoefficient = 0.5f;
+
+        // beam draw the joints
+        BeamDrawJoints = false;
+        return this;
     }
 }
-

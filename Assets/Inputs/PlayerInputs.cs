@@ -10,6 +10,7 @@ public class PlayerInputs : MonoBehaviour
     public bool jump;
     public bool sprint;
     public bool fire;
+    public bool altFire;
 
     [Header("Movement Settings")]
     public bool analogMovement;
@@ -52,6 +53,11 @@ public class PlayerInputs : MonoBehaviour
         FireInput(value.isPressed);
     }
 
+    public void OnAltFire(InputValue value)
+    {
+        AltFireInput(value.isPressed);
+    }
+
     public void HorizontalMoveInput(Vector2 newMoveDirection)
     {
         horizontalMove = newMoveDirection;
@@ -80,6 +86,12 @@ public class PlayerInputs : MonoBehaviour
     public void FireInput(bool newFireState)
     {
         fire = newFireState;
+    }
+
+    
+    public void AltFireInput(bool newAltFireState)
+    {
+        altFire = newAltFireState;
     }
 
 #if !UNITY_IOS || !UNITY_ANDROID
