@@ -142,6 +142,7 @@ public class BeamableObject : MonoBehaviour
         grabbedBy = null;
         ConfigurableJoint joint = _springJoint;
         _springJoint = null;
+        _rb.velocity = Vector3.zero;
         Destroy(joint);
     }
 
