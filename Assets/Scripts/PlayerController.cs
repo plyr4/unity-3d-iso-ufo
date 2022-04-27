@@ -74,6 +74,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void FollowCameraPosition() {
+        Debug.Log("late update FollowCameraPosition");
 		Vector3 targetCamPos = transform.position + _cameraOffset;
         _mainCameraPivot.transform.position = targetCamPos;
         _mainCameraPivot.GetComponentInChildren<Camera>().orthographicSize = CameraSizeCoefficient * transform.position.y / MaxHeight;

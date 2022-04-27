@@ -28,12 +28,13 @@ public class BeamableObject : MonoBehaviour
     private float MaxVelocity = 2f;
 
     LineRenderer line;
+    CurvedLineRenderer curvedLine;
 
     private bool retractJoint;
 
     [SerializeField]
     private bool TrackBeamableObjectJointChanges = true;
-
+    GameObject curvedLinePoint0, curvedLinePoint1, curvedLinePoint2;
     void Start()
     {
         if (_rb == null) _rb = GetComponent<Rigidbody>();
@@ -60,9 +61,8 @@ public class BeamableObject : MonoBehaviour
         {
             // TODO: joints do not like this
             // _rb.useGravity = false;
-
-            if (_springJoint == null) CreateTether();
-            if (TrackBeamableObjectJointChanges) CreateTether();
+            _rb.mass = 0.5f;
+            if (TrackBeamableObjectJointChanges) CreateTether(null);
 
             // debug joint outlines 
             if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) DrawJointLine();
@@ -99,6 +99,7 @@ public class BeamableObject : MonoBehaviour
         }
         else
         {
+            _rb.mass = 1f;
             _rb.useGravity = true;
             // undo outline
             if (isOutlined)
@@ -106,6 +107,7 @@ public class BeamableObject : MonoBehaviour
                 isOutlined = false;
                 RevertObjectOutline();
             }
+            ClearJointLine();
         }
     }
 
@@ -130,7 +132,7 @@ public class BeamableObject : MonoBehaviour
         isTethered = true;
         _rb.isKinematic = false;
         grabbedBy = beam.gameObject;
-        CreateTether();
+        CreateTether(beam);
         SetDynamicJointAttributes();
     }
 
@@ -170,10 +172,10 @@ public class BeamableObject : MonoBehaviour
         return grabbedBy.GetComponent<TractorBeam>()._beamDepth * GameConstants.Instance()._beamAttributes.BeamGrabAnchorDepthCoefficient;
     }
 
-    public void CreateTether()
+    public void CreateTether(TractorBeam beam)
     {
         if (_springJoint == null) _springJoint = gameObject.AddComponent<ConfigurableJoint>();
-
+        if (beam != null) _springJoint.connectedBody = beam._tetherAnchor;
         _springJoint.xMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.xMotion;
         _springJoint.yMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.yMotion;
         _springJoint.zMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.zMotion;
@@ -182,7 +184,6 @@ public class BeamableObject : MonoBehaviour
         _springJoint.angularZMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularZMotion;
 
         _springJoint.anchor = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.anchor;
-        _springJoint.connectedBody = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.connectedBody;
         _springJoint.autoConfigureConnectedAnchor = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.autoConfigureConnectedAnchor;
 
         _springJoint.xDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.xDrive;
@@ -194,6 +195,9 @@ public class BeamableObject : MonoBehaviour
 
         _springJoint.linearLimitSpring = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.linearLimitSpring;
         _springJoint.angularYZDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYZDrive;
+
+        _springJoint.massScale = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.massScale;
+        _springJoint.connectedMassScale = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.connectedMassScale;
     }
 
     public void SetDynamicJointAttributes()
@@ -297,14 +301,44 @@ public class BeamableObject : MonoBehaviour
 
     void DrawJointLine()
     {
-        if (line == null) line = this.gameObject.AddComponent<LineRenderer>();
-        line.startWidth = 0.1f;
-        line.endWidth = 0.1f;
-        line.positionCount = 3;
-        line.SetPosition(0, grabbedBy.gameObject.transform.position);
-        line.SetPosition(1, grabbedBy.gameObject.transform.position + _springJoint.connectedAnchor);
-        line.SetPosition(2, transform.position);
-        line.material.color = Color.red;
+        if (line == null)
+        {
+            line = this.gameObject.AddComponent<LineRenderer>();
+            curvedLine = this.gameObject.AddComponent<CurvedLineRenderer>();
+        }
+        line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderWidth;
+        line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderWidth;
+        line.material = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderMaterial;
+        line.startColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+        line.endColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+
+        if (curvedLinePoint0 == null)
+        {
+            curvedLinePoint0 = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
+            curvedLinePoint0.transform.parent = this.gameObject.transform;
+        }
+        curvedLinePoint0.transform.position = grabbedBy.gameObject.transform.position;
+
+        if (curvedLinePoint1 == null)
+        {
+            curvedLinePoint1 = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
+            curvedLinePoint1.transform.parent = this.gameObject.transform;
+        }
+        Vector3 mm =  new Vector3(_springJoint.connectedAnchor.x, _springJoint.connectedAnchor.y , _springJoint.connectedAnchor.z);
+        curvedLinePoint1.transform.position = grabbedBy.gameObject.transform.position + mm;
+
+
+        if (curvedLinePoint2 == null)
+        {
+            curvedLinePoint2 = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
+            curvedLinePoint2.transform.parent = this.gameObject.transform;
+        }
+        curvedLinePoint2.transform.position = transform.position;
+
+        // line.positionCount = 3;
+        // line.SetPosition(0, grabbedBy.gameObject.transform.position);
+        // line.SetPosition(1, grabbedBy.gameObject.transform.position + _springJoint.connectedAnchor);
+        // line.SetPosition(2, transform.position);
     }
 
     void ClearJointLine()
@@ -312,5 +346,8 @@ public class BeamableObject : MonoBehaviour
         if (line == null) return;
         line.endWidth = 0f;
         line.startWidth = 0f;
+        if (curvedLinePoint0 != null) Destroy(curvedLinePoint0);
+        if (curvedLinePoint1 != null) Destroy(curvedLinePoint1);
+        if (curvedLinePoint2 != null) Destroy(curvedLinePoint2);
     }
 }
