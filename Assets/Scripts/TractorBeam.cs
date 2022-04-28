@@ -202,6 +202,9 @@ public class TractorBeam : MonoBehaviour
         // control how much strength is required for the beam to function
         if (_beamStrength < StrengthToGrab) return;
 
+        // apply visual effects
+        ApplyBeamColors();
+
         // use cone cast to capture objects in the beam cone
         _inBeam = physics.ConeCastAll(
             _beamSource.position, AdjustedBeamRadius(), BeamDirection(), AdjustedBeamDistance(), _beamAngle, BeamableLayers);

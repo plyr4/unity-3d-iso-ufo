@@ -182,7 +182,7 @@ MonoBehaviour:
   _beamStrength: 1
   LockBeamStrength: 0
   BeamStrengthGrowthRate: 2
-  MaxBeamableObjects: 50
+  MaxBeamableObjects: 300
   MaxBeamDepth: 20
   MaxBeamRadius: 2.8
   BeamRangeModifier: 1.4
@@ -562,8 +562,15 @@ MonoBehaviour:
   _mainCameraPivot: {fileID: 0}
   CameraSizeCoefficient: 20
   CameraRotationSpeed: 75
-  MinVerticalHeight: 5
-  MaxVerticalHeight: 20
+  MinVerticalElevation: 5
+  MaxVerticalElevation: 20
+  ElevationBoundsPrecisionCoefficient: 0.01
+  MaxElevationSpringForce: 100
+  ElevationSpringStrength: 100
+  ElevationSpringDamper: 0.2
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 64
   HorizontalMaxSpeed: 15
   HorizontalBoostMaxSpeed: 14
   HorizontalAcceleration: 4
@@ -682,7 +689,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 1.8642889e-38, y: 1.8826563e-38, z: 1.873473e-38, w: 1.9010236e-38}
+  m_BoundingSphereOverride: {x: 0, y: 1.1135337e+37, z: 4.5905e-41, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0

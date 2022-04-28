@@ -69618,13 +69618,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6551004485968035123, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
-      propertyPath: MaxBeamableObjects
-      value: 300
-      objectReference: {fileID: 0}
     - target: {fileID: 6564219056733399990, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: m_BoundingSphereOverride.w
-      value: -2.6235065
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6564219056733399990, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: m_BoundingSphereOverride.x
@@ -69632,19 +69628,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6564219056733399990, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: m_BoundingSphereOverride.y
-      value: 7.1e-44
+      value: -221.45593
       objectReference: {fileID: 0}
     - target: {fileID: 6564219056733399990, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: m_BoundingSphereOverride.z
-      value: 0
+      value: 7.95e-43
       objectReference: {fileID: 0}
     - target: {fileID: 6899047277848233024, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: m_Name
       value: Saucer
       objectReference: {fileID: 0}
     - target: {fileID: 9063298988824610580, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
+      propertyPath: VerticalMaxSpeed
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 9063298988824610580, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
       propertyPath: _mainCameraPivot
       value: 
       objectReference: {fileID: 123256859}
+    - target: {fileID: 9063298988824610580, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
+      propertyPath: VerticalBoostMaxSpeed
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 9063298988824610580, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}
+      propertyPath: HorizontalBoostMaxSpeed
+      value: 18
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f7802dfc487beca44b058ad2867a9f1c, type: 3}

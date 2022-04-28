@@ -40,9 +40,24 @@ public class PlayerMovement : MonoBehaviour
     [Space]
     [Space]
     [SerializeField]
-    private float MinVerticalHeight = 4f;
+    [Range(4f, 10f)]
+    private float MinVerticalElevation = 4f;
     [SerializeField]
-    private float MaxVerticalHeight = 20f;
+    [Range(11f, 30f)]
+    private float MaxVerticalElevation = 20f;
+    [SerializeField]
+    private float ElevationBoundsPrecisionCoefficient = 0.001f;
+    [SerializeField]
+    [Range(0f, 100f)]
+    private float MaxElevationSpringForce = 100f;
+    [SerializeField]
+    [Range(0.01f, 200f)]
+    private float ElevationSpringStrength = 100f;
+    [SerializeField]
+    [Range(0f, 10f)]
+    private float ElevationSpringDamper = 0.2f;
+    [SerializeField]
+    private LayerMask GroundLayers;
     [Space]
     [SerializeField]
     private float HorizontalMaxSpeed = 10f;
@@ -57,6 +72,28 @@ public class PlayerMovement : MonoBehaviour
     private float VerticalBoostMaxSpeed = 14f;
     [SerializeField]
     private float VerticalAcceleration = 4f;
+
+    // cached elevation properties
+    private float _cachedTime;
+    public RaycastHit _currentGroundHit
+    {
+        get
+        {
+            if (_cachedTime != Time.time) UpdateElevationProperties();
+            return _cachedGroundHit;
+        }
+    }
+    private RaycastHit _cachedGroundHit;
+    public bool _groundIsHit
+    {
+        get
+        {
+            if (_cachedTime != Time.time) UpdateElevationProperties();
+            return _cachedGroundIsHit;
+        }
+    }
+    private bool _cachedGroundIsHit = false;
+
     [Space]
     [SerializeField]
     [Range(0.01f, 1f)]
@@ -93,7 +130,7 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         _cameraOffset = _mainCameraPivot.transform.position - transform.position;
-        _mainCamera = _mainCameraPivot.GetComponentInChildren<Camera>();
+        if (_mainCamera == null) _mainCamera = _mainCameraPivot.GetComponentInChildren<Camera>();
     }
 
     private void FixedUpdate()
@@ -160,6 +197,23 @@ public class PlayerMovement : MonoBehaviour
         // capture relevant input axis
         Vector3 _verticalInput = new Vector3(0f, _input.verticalMove.y, 0f);
 
+        // value of 1 means velocity slow is left as-is
+        float _boundsSlow = 1f;
+
+        // player is moving out of bounds
+        if ((!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 2f) && HasUpwardVerticalInput()))
+        {
+            // restrict movement input
+            _verticalInput = Vector3.zero;
+        }
+
+        // player is moving out of bounds
+        if ((!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 2f) && HasDownwardVerticalInput()))
+        {
+            // restrict movement input
+            _verticalInput = Vector3.zero;
+        }
+
         // capture current speed
         float _currentVerticalSpeed = GetCurrentVerticalSpeed();
 
@@ -189,7 +243,7 @@ public class PlayerMovement : MonoBehaviour
         if (_verticalInput == Vector3.zero)
         {
             // slow the velocity
-            _verticalMovement = _rb.velocity * VelocitySlowRate;
+            _verticalMovement = _rb.velocity * VelocitySlowRate * _boundsSlow;
 
             // apply rest when reaching the lower limit
             if (Mathf.Abs(_rb.velocity.y) <= ApproximationPrecision) _verticalMovement = new Vector3(_verticalMovement.x, 0f, _verticalMovement.z);
@@ -197,6 +251,63 @@ public class PlayerMovement : MonoBehaviour
 
         // apply the calculated vertical velocity
         _rb.velocity = new Vector3(_rb.velocity.x, _verticalMovement.y, _rb.velocity.z);
+    }
+
+    private void ClampVerticalMovement()
+    {
+        if (!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MinVerticalElevation);
+        if (!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MaxVerticalElevation);
+    }
+
+    private void MoveToElevation(float targetElevation)
+    {
+        // use the cached ground hit
+        if (_groundIsHit)
+        {
+            // current velocity of the moving object
+            Vector3 _currentVelocity = _rb.velocity;
+
+            // initialize the hit velocity
+            Vector3 _hitVelocity = Vector3.zero;
+
+            // the rigidbody hit by the raycast
+            Rigidbody _hitRigidbody = _currentGroundHit.rigidbody;
+
+            // use the directional velocity of the hit object
+            //    this might be useful for levitating off entities other than the ground
+            if (_hitRigidbody != null) _hitVelocity = _hitRigidbody.velocity;
+
+            // calculate the velocity towards the ground
+            float _directionalVelocity = Vector3.Dot(GroundDirection(), _currentVelocity);
+            float _hitDirectionVelocity = Vector3.Dot(GroundDirection(), _hitVelocity);
+
+            // the velocity difference between the two interacting objects
+            float _relativeVelocity = _directionalVelocity - _hitDirectionVelocity;
+
+            // calculate the distance we need to move
+            float _distanceToElevation = _currentGroundHit.distance - targetElevation;
+
+            // calculate the force to spring the object towards the desired elevation
+            //    adjust strength and damper to apply different spring
+            float _springForce = (_distanceToElevation * ElevationSpringStrength) - (_relativeVelocity * ElevationSpringDamper);
+
+            // clamp maximum spring force
+            if (MaxElevationSpringForce != 0f) _springForce = Mathf.Clamp(_springForce, -MaxElevationSpringForce, MaxElevationSpringForce);
+
+            // draw a line to debug the calculations
+            Debug.DrawLine(transform.position, transform.position + (GroundDirection() * _springForce), Color.green);
+
+            // apply force to move the elevation towards the desired elevation in the direction towards the ground
+            //    moving up is actually applying negative force in the direction of the ground
+            _rb.AddForce(GroundDirection() * _springForce);
+
+            // apply changes to the hit entity
+            if (_hitRigidbody != null)
+            {
+                // apply the opposite force to the object
+                _hitRigidbody.AddForceAtPosition(GroundDirection() * -_springForce, _currentGroundHit.point);
+            }
+        }
     }
 
     private void RotateAnimationBody()
@@ -230,16 +341,75 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void ClampVerticalMovement()
+    private void UpdateElevationProperties()
     {
-        // capture relevant input axis
-        Vector3 _verticalInput = new Vector3(0f, _input.verticalMove.y, 0f);
+        _cachedTime = Time.time;
 
-        // clamp minimum height using vertical velocity
-        if (transform.position.y <= MinVerticalHeight && _verticalInput.y <= 0f) _rb.velocity = new Vector3(_rb.velocity.x, 0f, _rb.velocity.z);
+        // variable to store the hit
+        RaycastHit _groundHit;
 
-        // clamp maximum height using vertical velocity
-        if (transform.position.y >= MaxVerticalHeight && _verticalInput.y >= 0f) _rb.velocity = new Vector3(_rb.velocity.x, 0f, _rb.velocity.z);
+        // attempt to hit the ground using raycast
+        _cachedGroundIsHit = Physics.Raycast(transform.position, GroundDirection(), out _groundHit, Mathf.Infinity, GroundLayers);
+        _cachedGroundHit = _groundHit;
+    }
+
+    private bool WithinMinimumVerticalBound(float precision)
+    {
+        return (GetGroundDistance() > (MinVerticalElevation + precision));
+    }
+    private bool WithinMaximumVerticalBound(float precision)
+    {
+        return (GetGroundDistance() < (MaxVerticalElevation - precision));
+    }
+
+    private bool WithinVerticalBounds(float precision)
+    {
+        return WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient) && WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient);
+    }
+
+    private float GetGroundDistance()
+    {
+        return _groundIsHit ? _currentGroundHit.distance : transform.position.y;
+    }
+
+    private Vector3 GroundDirection()
+    {
+        return -transform.up;
+    }
+
+    private bool HasDownwardVerticalInput()
+    {
+        return _input.verticalMove.y < 0f;
+    }
+
+    private bool HasUpwardVerticalInput()
+    {
+        return _input.verticalMove.y > 0f;
+    }
+
+    private float GetCurrentHorizontalSpeed()
+    {
+        return new Vector3(_rb.velocity.x, 0f, _rb.velocity.z).magnitude;
+    }
+
+    private float GetCurrentVerticalSpeed()
+    {
+        return new Vector3(0f, _rb.velocity.y, 0f).magnitude;
+    }
+
+    private float GetTargetHorizontalSpeed()
+    {
+        return (_input.horizontalMove != Vector3.zero) ? (_input.boost ? HorizontalBoostMaxSpeed : HorizontalMaxSpeed) : 0f;
+    }
+
+    private float GetTargetVerticalSpeed()
+    {
+        return (Mathf.Abs(_input.verticalMove.y) > ApproximationPrecision) ? (_input.boost ? VerticalBoostMaxSpeed : VerticalMaxSpeed) : 0f;
+    }
+
+    private Quaternion AngleLeft()
+    {
+        return Quaternion.Euler(new Vector3(0f, -45f, 0f));
     }
 
     private void FollowCameraPosition()
@@ -279,32 +449,7 @@ public class PlayerMovement : MonoBehaviour
 
     private float CalculateOrthographicCameraSize()
     {
-        // calculate camera size based on current height / max height
-        return CameraSizeCoefficient * transform.position.y / MaxVerticalHeight;
-    }
-
-    private float GetCurrentHorizontalSpeed()
-    {
-        return new Vector3(_rb.velocity.x, 0f, _rb.velocity.z).magnitude;
-    }
-
-    private float GetCurrentVerticalSpeed()
-    {
-        return new Vector3(0f, _rb.velocity.y, 0f).magnitude;
-    }
-
-    private float GetTargetHorizontalSpeed()
-    {
-        return (_input.horizontalMove != Vector3.zero) ? (_input.boost ? HorizontalBoostMaxSpeed : HorizontalMaxSpeed) : 0f;
-    }
-
-    private float GetTargetVerticalSpeed()
-    {
-        return (Mathf.Abs(_input.verticalMove.y) > ApproximationPrecision) ? (_input.boost ? VerticalBoostMaxSpeed : VerticalMaxSpeed) : 0f;
-    }
-
-    private Quaternion AngleLeft()
-    {
-        return Quaternion.Euler(new Vector3(0f, -45f, 0f));
+        // calculate camera size based on current elevation / max elevation
+        return CameraSizeCoefficient * GetGroundDistance() / MaxVerticalElevation;
     }
 }

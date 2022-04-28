@@ -263,7 +263,9 @@ public class BeamableObject : MonoBehaviour
         for (int i = 0; i < _drawPoints.Length; i++)
         {
             if (_drawPoints[i] == null) _drawPoints[i] = CreateJointDrawPoint(_drawTransforms[i]);
-            _drawPoints[i].transform.position = _drawTransforms[i];
+            GameObject _o = _drawPoints[i];
+            _o.transform.position = _drawTransforms[i];
+            _drawPoints[i] = _o;
         }
     }
 
@@ -276,6 +278,7 @@ public class BeamableObject : MonoBehaviour
     {
         GameObject _gameObject = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
         _gameObject.transform.parent = transform;
+        _gameObject.transform.position = drawPos;
         return _gameObject;
     }
 
@@ -286,11 +289,6 @@ public class BeamableObject : MonoBehaviour
 
     private void ClearJointLine()
     {
-        if (line != null)
-        {
-            line.endWidth = 0f;
-            line.startWidth = 0f;
-        }
         if (_drawPoints != null)
         {
             for (int i = _drawPoints.Length - 1; i >= 0; i--)
@@ -299,5 +297,11 @@ public class BeamableObject : MonoBehaviour
             }
         }
         if (curvedLine != null) Destroy(curvedLine);
+        if (line != null)
+        {
+            line.endWidth = 0f;
+            line.startWidth = 0f;
+            Destroy(line);
+        }
     }
 }
