@@ -11,7 +11,7 @@ public class PixelizerMaterial
         _originalOutlineID = m.GetInt("_ID");
         _material = m;
     }
-
+    // TODO: check the user guide, this can be done much better using root outline id
     public void ApplyOutline(Color c, int id)
     {
         _material.SetColor("_OutlineColor", c);

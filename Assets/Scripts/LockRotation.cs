@@ -1,24 +1,38 @@
 using UnityEngine;
 
 public class LockRotation : MonoBehaviour
-{   
+{
     [SerializeField]
-    private bool global;
-    Quaternion rot;
+    private bool UseGlobalRotation;
+    Quaternion _initialRotation;
     [SerializeField]
     private bool lockX, lockY, lockZ;
 
     void Start()
     {
-        rot = global ? transform.rotation : transform.localRotation;
+        // initialize the rotation to lock
+        _initialRotation = UseGlobalRotation ? transform.rotation : transform.localRotation;
     }
 
     void LateUpdate()
     {
-        Quaternion current = global ? transform.rotation : transform.localRotation;
-        if (global)
-            transform.rotation = new Quaternion(lockX ? rot.x : current.x, lockY ? rot.y : current.y, lockZ ? rot.z : current.z, rot.w);
+        // lock rotations
+        Lock();
+    }
+
+    private void Lock()
+    {
+        // capture current rotation
+        Quaternion current = UseGlobalRotation ? transform.rotation : transform.localRotation;
+
+        // set the locked rotation
+        Quaternion rotation =
+            new Quaternion(lockX ? _initialRotation.x : current.x, lockY ? _initialRotation.y : current.y, lockZ ? _initialRotation.z : current.z, _initialRotation.w);
+        
+        // update rotation
+        if (UseGlobalRotation)
+            transform.rotation = rotation;
         else
-            transform.localRotation = new Quaternion(lockX ? rot.x : current.x, lockY ? rot.y : current.y, lockZ ? rot.z : current.z, rot.w);
+            transform.localRotation = rotation;
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class BeamAttributes : MonoBehaviour
 {
+    [Header("Beam Attributes")]
     [SerializeField]
     public Color BeamGrabOutlineColor = Color.yellow;
     [SerializeField]

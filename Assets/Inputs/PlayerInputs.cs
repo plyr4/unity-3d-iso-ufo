@@ -7,19 +7,21 @@ public class PlayerInputs : MonoBehaviour
     public Vector3 verticalMove;
     public Vector3 horizontalMove;
     public Vector2 look;
-    public bool jump;
-    public bool sprint;
+    public bool boost;
     public bool fire;
     public bool altFire;
-
+    
     [Header("Movement Settings")]
     public bool analogMovement;
 
 #if !UNITY_IOS || !UNITY_ANDROID
+
     [Header("Mouse Cursor Settings")]
     public bool cursorLocked = true;
     public bool cursorInputForLook = true;
+
 #endif
+
     public void OnHorizontalMove(InputValue value)
     {
         HorizontalMoveInput(value.Get<Vector2>());
@@ -38,14 +40,9 @@ public class PlayerInputs : MonoBehaviour
         }
     }
 
-    public void OnJump(InputValue value)
+    public void OnBoost(InputValue value)
     {
-        JumpInput(value.isPressed);
-    }
-
-    public void OnSprint(InputValue value)
-    {
-        SprintInput(value.isPressed);
+        BoostInput(value.isPressed);
     }
 
     public void OnFire(InputValue value)
@@ -73,14 +70,9 @@ public class PlayerInputs : MonoBehaviour
         look = newLookDirection;
     }
 
-    public void JumpInput(bool newJumpState)
+    public void BoostInput(bool newBoostState)
     {
-        jump = newJumpState;
-    }
-
-    public void SprintInput(bool newSprintState)
-    {
-        sprint = newSprintState;
+        boost = newBoostState;
     }
 
     public void FireInput(bool newFireState)

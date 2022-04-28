@@ -6,23 +6,36 @@ public static class PhysicsCones
     public static RaycastHit[] ConeCastAll(this Physics physics, Vector3 origin, float maxRadius,
         Vector3 direction, float maxDistance, float coneAngle, LayerMask layers)
     {
-        RaycastHit[] sphereCastHits =
+        // apply a sphere cast to capture any objects that potentially lie in the cone angle
+        RaycastHit[] _sphereCastHits =
             Physics.SphereCastAll(origin - direction.normalized * maxRadius, maxRadius, direction, maxDistance, layers);
-        List<RaycastHit> coneCastHitList = new List<RaycastHit>();
-        if (sphereCastHits.Length > 0)
-        {
-            for (int i = 0; i < sphereCastHits.Length; i++)
-            {
-                Vector3 hitPoint = sphereCastHits[i].point;
-                Vector3 directionToHit = hitPoint - origin;
-                float angleToHit = Vector3.Angle(direction, directionToHit);
 
-                if (angleToHit < coneAngle)
+
+        // list to store objects only that lie in the cone angle
+        List<RaycastHit> coneCastHits = new List<RaycastHit>();
+        if (_sphereCastHits.Length > 0)
+        {
+            for (int i = 0; i < _sphereCastHits.Length; i++)
+            {
+                // where the object collided with the sphere cast
+                Vector3 _hitPoint = _sphereCastHits[i].point;
+
+                // direction to the point of contact
+                Vector3 directionToHit = _hitPoint - origin;
+
+                // angle to the point of contact
+                float _hitAngle = Vector3.Angle(direction, directionToHit);
+
+                // compare this angle with the cone angle
+                if (_hitAngle < coneAngle)
                 {
-                    coneCastHitList.Add(sphereCastHits[i]);
+                    // object lies in the cone angle
+                    coneCastHits.Add(_sphereCastHits[i]);
                 }
             }
         }
-        return coneCastHitList.ToArray();
+
+        // return cone cast hits
+        return coneCastHits.ToArray();
     }
 }

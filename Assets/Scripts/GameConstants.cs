@@ -20,7 +20,6 @@ public class GameConstants : MonoBehaviour
         _instance = this;
     }
 
-
     public static GameConstants Instance()
     {
         if (_instance == null) return new GameConstants();
@@ -29,7 +28,10 @@ public class GameConstants : MonoBehaviour
 
     private void InitBeamAttributes()
     {
+        // attempt to use the present component
         if (_beamAttributes == null) _beamAttributes = gameObject.GetComponent<BeamAttributes>();
+
+        // apply a default in the case that nothing was provided
         if (_beamAttributes == null) _beamAttributes = gameObject.AddComponent<BeamAttributes>().InitializeDefaults();
     }
 }

@@ -1,326 +1,391 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
 using VLB;
 
-[RequireComponent(typeof(PlayerInputs))]
 public class TractorBeam : MonoBehaviour
 {
+    [Header("Input Settings")]
+    [SerializeField]
     private PlayerInputs _input;
 
+    [Header("Beam Settings")]
+    [Space]
+    [Space]
+    [Space]
+    [SerializeField]
+    private Transform _beamSource;
+    [SerializeField]
+    private Rigidbody _tetherAnchor;
+    [Space]
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float _beamStrength;
+    [SerializeField]
+    private bool LockBeamStrength;
+    [Space]
+    [SerializeField]
+    [Range(0.01f, 10f)]
+    private float BeamStrengthGrowthRate = 2f;
+    [SerializeField]
+    private int MaxBeamableObjects = 50;
+    [SerializeField]
+    [Range(0.01f, 50f)]
+    private float MaxBeamDepth = 20f;
+    [SerializeField]
+    [Range(0.01f, 10f)]
+    private float MaxBeamRadius = 4f;
+    [SerializeField]
+    [Range(0.01f, 2f)]
+    private float BeamRangeModifier = 1.4f;
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float StrengthToGrab = 0.95f;
+    [SerializeField]
+    private LayerMask GroundLayers;
+    [SerializeField]
+    private LayerMask BeamableLayers;
+    private RaycastHit[] _inBeam;
+    private Dictionary<int, BeamableObject> _tetheredBeamables;
+
+    [Header("Light Settings")]
+    [Space]
+    [Space]
+    [Space]
     [SerializeField]
     private Light _beamSpotLight;
-
     [SerializeField]
     private VolumetricLightBeam _vlb;
+    [Space]
+    [SerializeField]
+    private bool LockLightProperties = true;
+    [Space]
+    [SerializeField]
+    private float VLBSpotAngleModifier = 0.7f;
+    [SerializeField]
+    private float BeamSpotLightSpotAngleModifier = 0.25f;
+    [SerializeField]
+    private float VLBRangeStrengthCoefficient = 0.5f;
+    private Color _originalSpotLightColor;
 
-    private Color _originalSpotLightColor, _originalVLBColor;
-
-    float _cachedTime;
-
-    private float _cachedRadius;
+    // cached beam properties
+    private float _cachedTime;
     public float _beamRadius
     {
         get
         {
-            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            if (_cachedTime != Time.time) UpdateBeamProperties();
             return _cachedRadius;
         }
     }
+    private float _cachedRadius;
 
-    private float _cachedDepth;
     public float _beamDepth
     {
         get
         {
-            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            if (_cachedTime != Time.time) UpdateBeamProperties();
             return _cachedDepth;
         }
     }
+    private float _cachedDepth;
 
-    private float _cachedAngle;
     public float _beamAngle
     {
         get
         {
-            if (_cachedTime != Time.time) LoadDynamicBeamProperties();
+            if (_cachedTime != Time.time) UpdateBeamProperties();
             return _cachedAngle;
         }
     }
+    private float _cachedAngle;
 
-    [SerializeField]
-    private float _beamStrength;
-    [SerializeField]
-    private float ConstantBeamStrength;
-
-    //// TODO: improve
-
+    // needed for PhysicsCones
     private Physics physics;
-
-    private RaycastHit[] hitsInBeam;
-    int numGrabbed = 0;
-
-
-    [SerializeField]
-    private Dictionary<int, BeamableObject> grabbedObjects;
-
-
-    ///// END TODO
-
-    [SerializeField]
-    public bool LockLightProperties = false;
-    [SerializeField]
-    private float VLBSpotAngleModifier = 1f;
-    [SerializeField]
-    private float BeamSpotLightSpotAngleModifier = 0.25f;
-    [SerializeField]
-    private float DestinationRadius;
-    [SerializeField]
-    private float DestinationDepth;
-
-    [SerializeField]
-    private float MaxDepth = 20f;
-    [SerializeField]
-    private float MaxBeamRadius = 4f;
-    [SerializeField]
-    private float BeamRangeModifier = 1.4f;
-    [SerializeField]
-    [Range(0f, 1f)]
-    private float BeamStrengthGrabThreshold = 0.95f;
-    [SerializeField]
-    private float BeamStrengthGrowthRate = 2f;
-
-    [SerializeField]
-    private float BeamSpeed;
-
-    [SerializeField]
-    private float BeamPickupSpeed = 1f;
-    [SerializeField]
-    private LayerMask GroundLayerMask;
-
-    [SerializeField]
-    private LayerMask BeamableLayerMask;
-
-    [SerializeField]
-    public Rigidbody _tetherAnchor;
-
-
-
-    public void LoadDynamicBeamProperties()
-    {
-        _cachedTime = Time.time;
-        _cachedDepth = GetDepth();
-        _cachedRadius = MaxBeamRadius * _cachedDepth / MaxDepth;
-        _cachedAngle = Mathf.Atan(_cachedDepth / _cachedRadius / MaxBeamRadius) * Mathf.Rad2Deg;
-
-        // apply dynamic properties to beam lights
-        if (LockLightProperties && _beamSpotLight != null && _vlb != null)
-        {
-            // spot light range and angles
-            _beamSpotLight.range = _cachedDepth * BeamRangeModifier;
-            _beamSpotLight.spotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
-            _beamSpotLight.innerSpotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
-
-            // volumetric light shaft range and angle
-            _vlb.spotAngle = _cachedAngle * VLBSpotAngleModifier;
-            _vlb.fallOffEnd = _beamSpotLight.range * 0.5f * (_beamStrength);
-            _vlb.fallOffStart = _vlb.fallOffEnd * 0.95f;
-        }
-    }
 
     private void Start()
     {
-        // player input used for tractor beam triggers
-        _input = GetComponent<PlayerInputs>();
+        // initialize player input used for tractor beam triggers
+        InitializeInputs();
 
-        // fetch lights if not explicitly set in the inspector
-        if (_beamSpotLight == null) _beamSpotLight = GetComponentInChildren<Light>();
-        if (_vlb == null) _vlb = GetComponentInChildren<VolumetricLightBeam>();
+        // initialize lights if not explicitly set in the inspector
+        InitializeLights();
 
-        // if we dont have lights by now, we deserve to crash
-        _originalSpotLightColor = _beamSpotLight.color;
-        _originalVLBColor = _vlb.color;
+        // initialize beamables and beam properties
+        InitializeBeam();
+    }
 
+    private void InitializeBeam()
+    {
         // initialize cone raycast hits
-        hitsInBeam = new RaycastHit[100];
+        _inBeam = new RaycastHit[0];
 
         // initialize beamable objects
-        grabbedObjects = new Dictionary<int, BeamableObject>();
+        _tetheredBeamables = new Dictionary<int, BeamableObject>();
 
         // initialize beam properties
-        LoadDynamicBeamProperties();
+        UpdateBeamProperties();
     }
-    void FixedUpdate()
+
+    private void Update()
     {
-        LoadDynamicBeamProperties();
-        // reset cone hits before checking them
-        // if (numGrabbed > 0)
-        // {
-        //     for (int i = numGrabbed - 1; i >= 0; i--)
-        //     {
-        //         BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
-        //         if (beamable != null)
-        //         {
-        //             beamable.SetGrabbed(false);
-        //         }
-        //     }
-        // }
+        UpdateBeamStrength();
+    }
 
-        // attempt to reset beam
-        _beamSpotLight.color = _originalSpotLightColor;
-        _vlb.color = _originalVLBColor;
+    private void FixedUpdate()
+    {
+        UpdateBeamProperties();
+        ResetLightColors();
+        if (_input.fire) FireBeam();
+        if (!_input.fire) ReleaseBeam();
+        if (_input.altFire) RetractBeam();
+        AbsorbBeamables();
+    }
 
-        // handle beam +/-
-        if (_input.fire) _beamStrength += BeamStrengthGrowthRate * Time.deltaTime;
-        else _beamStrength -= BeamStrengthGrowthRate * Time.deltaTime;
-        _beamStrength = Mathf.Clamp(_beamStrength, 0f, 1f);
+    private void OnDrawGizmosSelected()
+    {
+        DrawBeamDepthRay();
+        DrawBeamPickupSphere();
+    }
 
-        if (ConstantBeamStrength != 0f) _beamStrength = ConstantBeamStrength;
+    private void InitializeInputs()
+    {
+        if (_input == null) _input = GetComponent<PlayerInputs>();
+        if (_input == null) _input = GetComponentInChildren<PlayerInputs>();
+        if (_input == null) _input = transform.parent.GetComponent<PlayerInputs>();
+    }
 
-        // check for trigger and strength
-        // if (_input.fire && (_beamStrength >= BeamStrengthGrabThreshold || (ConstantBeamStrength != 0f && _beamStrength >= ConstantBeamStrength)))
-        if (_input.fire && (_beamStrength >= BeamStrengthGrabThreshold || (ConstantBeamStrength != 0f && _beamStrength >= ConstantBeamStrength)))
+    private void InitializeLights()
+    {
+        // beam spot light
+        if (_beamSpotLight == null) _beamSpotLight = GetComponent<Light>();
+        if (_beamSpotLight == null) _beamSpotLight = GetComponentInChildren<Light>();
+        if (_beamSpotLight == null) _beamSpotLight = transform.parent.GetComponent<Light>();
+
+        _originalSpotLightColor = _beamSpotLight.color;
+
+        // volumetric light beam
+        if (_vlb == null) _vlb = GetComponent<VolumetricLightBeam>();
+        if (_vlb == null) _vlb = GetComponentInChildren<VolumetricLightBeam>();
+        if (_vlb == null) _vlb = transform.parent.GetComponent<VolumetricLightBeam>();
+    }
+
+    private void UpdateBeamStrength()
+    {
+        _beamStrength = Mathf.Clamp(_beamStrength += (_input.fire ? 1 : -1) * BeamStrengthGrowthRate * Time.deltaTime, 0f, 1f);
+    }
+
+    private void UpdateBeamProperties()
+    {
+        // last time cache was updated
+        _cachedTime = Time.time;
+
+        // depth of the beam
+        _cachedDepth = GetBeamDepth();
+
+        // radius of the beam capture cone
+        _cachedRadius = MaxBeamRadius * _cachedDepth / MaxBeamDepth;
+
+        // angle of the capture cone (does this change?)
+        _cachedAngle = Mathf.Atan(_cachedDepth / _cachedRadius / MaxBeamRadius) * Mathf.Rad2Deg;
+
+        // apply dynamic properties to beam lights
+        if (LockLightProperties) ApplyLightProperties();
+    }
+
+    private void FireBeam()
+    {
+        // beam has no strength
+        //    this saves on useless physics calls and potentially invalid math
+        if (_beamStrength <= 0f) return;
+
+        // control how much strength is required for the beam to function
+        if (_beamStrength < StrengthToGrab) return;
+
+        // use cone cast to capture objects in the beam cone
+        _inBeam = physics.ConeCastAll(
+            _beamSource.position, AdjustedBeamRadius(), BeamDirection(), AdjustedBeamDistance(), _beamAngle, BeamableLayers);
+
+        // the beam cone contains objects
+        if (_inBeam.Length > 0)
         {
-            _beamSpotLight.color = GameConstants.Instance()._beamAttributes.BeamGrabSpotLightColor;
-            // _vlb.color = BeamUpColor;
-
-            hitsInBeam = physics.ConeCastAll(transform.position, BeamRadius(), BeamDirection(), BeamDistance(), _beamAngle, BeamableLayerMask);
-            numGrabbed = hitsInBeam.Length;
-
-            if (numGrabbed > 0)
+            for (int i = _inBeam.Length - 1; i >= 0; i--)
             {
-                for (int i = numGrabbed - 1; i >= 0; i--)
-                {
-                    if (hitsInBeam[i].collider.gameObject.tag != "Player")
-                    {
-                        BeamableObject beamable = hitsInBeam[i].collider.gameObject.GetComponent<BeamableObject>();
-                        if (beamable != null)
-                        {
-                            if (!beamable.Tethered()) beamable.Tether(this);
-                            AddGrabbedBeamable(beamable);
-                        }
-                    }
-                }
+                // ignore the player
+                if (_inBeam[i].collider.gameObject.tag == "Player") continue;
+
+                BeamableObject _beamable = _inBeam[i].collider.gameObject.GetComponent<BeamableObject>();
+
+                // ignore non-beamables
+                if (_beamable == null) continue;
+
+                // tether to the beamable if possible
+                AttemptTether(_beamable);
             }
         }
+    }
 
-        // released beam
-        if (!_input.fire)
+    private void ReleaseBeam()
+    {
+        // remove and untether any objects in the beam
+        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList())
         {
-
-                foreach (int objectID in grabbedObjects.Keys.ToList())
-                {
-                    BeamableObject obj = grabbedObjects[objectID];
-                    if (obj.Tethered()) obj.Untether();
-                    RemoveGrabbedBeamable(obj);
-                }
+            AttemptUntether(_beamable);
         }
+    }
 
-        if (_input.altFire)
+    private void RetractBeam()
+    {
+        // pull up any objects in the beam
+        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList()) _beamable.RetractJoint();
+    }
+
+    private void AbsorbBeamables()
+    {
+        // absorb any retracted beamables
+        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList())
         {
-            foreach (int objectID in grabbedObjects.Keys.ToList())
+            if (_beamable.Retracted())
             {
-                BeamableObject obj = grabbedObjects[objectID];
-                obj.RetractJoint();
+                AbsorbBeamable(_beamable);
             }
         }
+    }
 
-        foreach (int objectID in grabbedObjects.Keys.ToList())
+    private void AbsorbBeamable(BeamableObject beamable)
+    {
+        // untether the beamable
+        AttemptUntether(beamable);
+
+        // destroy the object
+        Destroy(beamable.gameObject);
+    }
+
+    private void AttemptTether(BeamableObject beamable)
+    {
+        // if beam is full
+        if (_tetheredBeamables.Count >= MaxBeamableObjects)
         {
-            BeamableObject obj = grabbedObjects[objectID];
-            if (obj.Retracted())
-            {
-                grabbedObjects.Remove(objectID);
-                Destroy(obj.gameObject);
-            }
+            DenyTether(beamable);
+            return;
         }
 
-        // int maxColliders = 20;
-        // Collider[] hitColliders = new Collider[maxColliders];
-        // int numColliders = Physics.OverlapSphereNonAlloc((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius, hitColliders);
-        // for (int i = numColliders - 1; i >= 0; i--)
-        // {
-        //     BeamableObject beamable = hitColliders[i].gameObject.GetComponent<BeamableObject>();
-        //     if (beamable != null)
-        //     {
-        //         beamable.gameObject.SetActive(false);
-        //         RemoveGrabbedBeamable(beamable);
-        //         Destroy(beamable.gameObject);
-        //     }
-        // }
+        // tether beamable
+        if (!beamable.Tethered()) beamable.Tether(this);
+
+        // add beamable to the beam
+        AddGrabbedBeamable(beamable);
     }
 
-
-    void AddGrabbedBeamable(BeamableObject beamable)
+    private void AttemptUntether(BeamableObject beamable)
     {
-        grabbedObjects[beamable.gameObject.GetInstanceID()] = beamable;
+        // untether beamable
+        if (beamable.Tethered()) beamable.Untether();
+
+        // remove beamable from the beam
+        RemoveGrabbedBeamable(beamable);
     }
 
-    void RemoveGrabbedBeamable(BeamableObject beamable)
+    private void DenyTether(BeamableObject beamable)
     {
-        grabbedObjects.Remove(beamable.gameObject.GetInstanceID());
+        Debug.Log("implement this with some static object wiggle or something");
     }
 
-    void ClearGrabbedBeamables(BeamableObject beamable)
+    private void AddGrabbedBeamable(BeamableObject beamable)
     {
-        grabbedObjects.Clear();
+        _tetheredBeamables[beamable.gameObject.GetInstanceID()] = beamable;
     }
 
-    bool InGrabbedBeamables(BeamableObject beamable)
+    private void RemoveGrabbedBeamable(BeamableObject beamable)
     {
-        return grabbedObjects.ContainsKey(beamable.gameObject.GetInstanceID());
+        _tetheredBeamables.Remove(beamable.gameObject.GetInstanceID());
     }
 
-    // sends Raycast to the terrain and returns either distance to hit or MaxDepth
-    float GetDepth()
+    private void ClearGrabbedBeamables(BeamableObject beamable)
     {
+        _tetheredBeamables.Clear();
+    }
+
+    private float GetBeamDepth()
+    {
+        // sends Raycast to the terrain and returns either distance to hit or MaxBeamDepth
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, BeamDirection(), out hit, MaxDepth, GroundLayerMask)) return hit.distance;
-        return MaxDepth;
+        return Physics.Raycast(_beamSource.position, BeamDirection(), out hit, MaxBeamDepth, GroundLayers) ? hit.distance : MaxBeamDepth;
     }
 
-    Vector3 BeamDirection()
+    public Rigidbody GetTetherAnchor()
     {
-        return -transform.up;
+        return _tetherAnchor;
     }
 
-    float BeamDistance()
+    private Vector3 BeamDirection()
+    {
+        return -_beamSource.up;
+    }
+
+    private float AdjustedBeamDistance()
     {
         return _beamDepth * _beamStrength;
     }
 
-
-    float BeamRadius()
+    private float AdjustedBeamRadius()
     {
         return _beamRadius * _beamStrength;
     }
 
-    void OnDrawGizmosSelected()
+    private void ResetLightColors()
     {
-        DrawBeamDepthRay();
-        DrawBeamDestinationSphere();
-        DrawBeamPickupSphere();
+        _beamSpotLight.color = _originalSpotLightColor;
+    }
+
+    private void ApplyBeamColors()
+    {
+        // apply the beam-up color
+        _beamSpotLight.color = GameConstants.Instance()._beamAttributes.BeamGrabSpotLightColor;
+    }
+
+    private void ApplyLightProperties()
+    {
+        // spot light range and angles
+        if (_beamSpotLight != null)
+        {
+            // beam spot light should reach the ground
+            _beamSpotLight.range = _cachedDepth * BeamRangeModifier;
+
+            // spot angle should match the cone angle as close as possible
+            _beamSpotLight.spotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+
+            // the inner spot angle matches the outer spot angle
+            _beamSpotLight.innerSpotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+        }
+
+        // volumetric light shaft range and angle
+        if (_vlb != null)
+        {
+            // vlb light should reach the spot light distance
+            float _range = (_beamSpotLight != null) ? _beamSpotLight.range : _cachedDepth * BeamRangeModifier;
+
+            // vlb fall off should match the strength of the beam
+            //    the "beam up effect"
+            _vlb.fallOffEnd = _range * _beamStrength * VLBRangeStrengthCoefficient;
+            _vlb.fallOffStart = _vlb.fallOffEnd;
+
+            // vlb spot angle should match the cone angle as close as possible
+            _vlb.spotAngle = _cachedAngle * VLBSpotAngleModifier;
+        }
     }
 
     // draw the ray between the ship and the ground
-    void DrawBeamDepthRay()
+    private void DrawBeamDepthRay()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawRay(transform.position, BeamDirection() * BeamDistance());
+        Gizmos.DrawRay(_beamSource.position, BeamDirection() * AdjustedBeamDistance());
     }
 
     // draw the sphere that is used as a cone raycast radius
-    void DrawBeamPickupSphere()
+    private void DrawBeamPickupSphere()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere((transform.position) + BeamDirection() * BeamDistance(), BeamRadius());
-    }
-
-    // draw the sphere that is used as the beam destination
-    void DrawBeamDestinationSphere()
-    {
-        Gizmos.color = new Color(148f, 0f, 211f);
-        Gizmos.DrawWireSphere((_beamSpotLight.transform.position + BeamDirection() * DestinationDepth), DestinationRadius);
+        Gizmos.DrawWireSphere((_beamSource.position) + BeamDirection() * AdjustedBeamDistance(), AdjustedBeamRadius());
     }
 }
