@@ -23,6 +23,10 @@ public class TractorBeam : MonoBehaviour
     private float _beamStrength;
     [SerializeField]
     private bool LockBeamStrength;
+    [SerializeField]
+    private bool LockFire;
+    [SerializeField]
+    private bool LockAltFire;
     [Space]
     [SerializeField]
     [Range(0.01f, 10f)]
@@ -136,9 +140,9 @@ public class TractorBeam : MonoBehaviour
     {
         UpdateBeamProperties();
         ResetLightColors();
-        if (_input.fire) FireBeam();
-        if (!_input.fire) ReleaseBeam();
-        if (_input.altFire) RetractBeam();
+        if (Fire()) FireBeam();
+        if (!Fire()) ReleaseBeam();
+        if (AltFire()) RetractBeam();
         AbsorbBeamables();
     }
 
@@ -170,9 +174,18 @@ public class TractorBeam : MonoBehaviour
         if (_vlb == null) _vlb = transform.parent.GetComponent<VolumetricLightBeam>();
     }
 
+    private bool Fire() {
+        return LockFire || _input.fire;
+    }
+
+
+    private bool AltFire() {
+        return LockAltFire || _input.altFire;
+    }
+
     private void UpdateBeamStrength()
     {
-        _beamStrength = Mathf.Clamp(_beamStrength += (_input.fire ? 1 : -1) * BeamStrengthGrowthRate * Time.deltaTime, 0f, 1f);
+        _beamStrength = Mathf.Clamp(_beamStrength += (LockBeamStrength ? 0 : (Fire() ? 1 : -1)) * BeamStrengthGrowthRate * Time.deltaTime, 0f, 1f);
     }
 
     private void UpdateBeamProperties()
@@ -291,7 +304,7 @@ public class TractorBeam : MonoBehaviour
 
     private void DenyTether(BeamableObject beamable)
     {
-        Debug.Log("implement this with some static object wiggle or something");
+        // Debug.Log("implement this with some static object wiggle or something");
     }
 
     private void AddGrabbedBeamable(BeamableObject beamable)

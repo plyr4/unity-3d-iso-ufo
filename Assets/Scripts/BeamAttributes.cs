@@ -25,10 +25,16 @@ public class BeamAttributes : MonoBehaviour
     public bool BeamDrawJoints = false;
 
     [SerializeField]
+    public bool BeamDrawJointsCurved = false;
+
+    [SerializeField]
     public Color BeamGrabJointRenderColor = new Color(0f, 248f, 255f, 0.5f);
     
     [SerializeField]
-    public float BeamGrabJointRenderWidth = 0.1f;
+    public float BeamGrabJointRenderStartWidth = 0.08f;
+    
+    [SerializeField]
+    public float BeamGrabJointRenderEndWidth = 0.02f;
 
     [SerializeField]
     public Material BeamGrabJointRenderMaterial;
@@ -54,11 +60,15 @@ public class BeamAttributes : MonoBehaviour
         // beam draw the joints
         BeamDrawJoints = false;
 
+        // beam draw the joints as a curved line
+        BeamDrawJointsCurved = false;
+
         // beam up joint renderer color
         BeamGrabJointRenderColor = new Color(0f, 248f, 255f, 0.5f);
         
         // beam up joint renderer width
-        BeamGrabJointRenderWidth = 0.1f;
+        BeamGrabJointRenderStartWidth = 0.08f;
+        BeamGrabJointRenderEndWidth = 0.02f;
         return this;
     }
 }

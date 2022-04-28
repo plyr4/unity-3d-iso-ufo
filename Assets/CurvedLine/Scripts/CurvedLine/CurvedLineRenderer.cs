@@ -19,14 +19,19 @@ public class CurvedLineRenderer : MonoBehaviour
 	private Vector3[] linePositions = new Vector3[0];
 	private Vector3[] linePositionsOld = new Vector3[0];
 
-     // Update is called once per frame
     public void LateUpdate () 
 	{
 		GetPoints();
 		SetPointsToLine();
 	}
 
-	void GetPoints()
+	public void ManualUpdate () 
+	{
+		GetPoints();
+		SetPointsToLine();
+	}
+
+	public void GetPoints()
 	{        
 		//find curved points in children
 		linePoints = this.GetComponentsInChildren<CurvedLinePoint>();
@@ -39,7 +44,7 @@ public class CurvedLineRenderer : MonoBehaviour
 		}
 	}
 
-	void SetPointsToLine()
+	public void SetPointsToLine()
 	{
 		//create old positions if they dont match
 		if( linePositionsOld.Length != linePositions.Length )

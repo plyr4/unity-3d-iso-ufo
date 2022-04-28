@@ -37,6 +37,7 @@ public class BeamableObject : MonoBehaviour
         if (_rb == null) _rb = GetComponent<Rigidbody>();
         SetMeshCollidersToConvex();
         gameObject.layer = 8;
+        _drawPoints = new GameObject[3];
 
         // prepare pixelizer materials
         MeshRenderer[] _meshRenderers = GetComponentsInChildren<MeshRenderer>();
@@ -59,16 +60,12 @@ public class BeamableObject : MonoBehaviour
             _rb.mass = 0.5f;
             if (TrackBeamableObjectJointChanges) CreateTether(null);
 
-            // debug joint outlines 
-            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) DrawJointLine();
-            else if (line != null) ClearJointLine();
-
             UpdateJointProperties();
 
             // apply random torque once
             if (!hasSpun)
             {
-                // ApplyRandomSpin();
+                ApplyRandomSpin();
                 hasSpun = true;
             }
 
@@ -97,10 +94,29 @@ public class BeamableObject : MonoBehaviour
                 isOutlined = false;
                 RevertObjectOutline();
             }
-            ClearJointLine();
         }
+        DrawTether();
     }
 
+    private void FixedUpdate()
+    {
+    }
+
+    private void DrawTether()
+    {
+        if (Tethered())
+        {
+            // TODO: reimplement this - performance bottleneck
+            //
+            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) DrawJointLine();
+            else if (GameConstants.Instance()._beamAttributes.BeamDrawJointsCurved) DrawJointLineCurved();
+            else DestroyJointLine();
+        }
+        else
+        {
+            DestroyJointLine();
+        }
+    }
 
     private void Reset()
     {
@@ -130,9 +146,10 @@ public class BeamableObject : MonoBehaviour
     {
         isTethered = false;
         _beam = null;
+        hasSpun = false;
         ConfigurableJoint joint = _springJoint;
         _springJoint = null;
-        _rb.velocity = Vector3.zero;
+        _rb.velocity = _rb.velocity * 0.5f;
         Destroy(joint);
     }
 
@@ -174,7 +191,7 @@ public class BeamableObject : MonoBehaviour
         _springJoint.angularYMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYMotion;
         _springJoint.angularZMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularZMotion;
 
-        _springJoint.anchor = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.anchor;
+        _springJoint.anchor = transform.TransformDirection(AnchorPivotPosition());
         _springJoint.autoConfigureConnectedAnchor = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.autoConfigureConnectedAnchor;
 
         _springJoint.xDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.xDrive;
@@ -204,11 +221,21 @@ public class BeamableObject : MonoBehaviour
 
     public void ApplyRandomSpin()
     {
-        // TODO: improve this
-        float min = -20f;
-        float max = 20f;
-        float xzModifier = 5f;
-        var rot = new Vector3(Random.Range(min, max) * xzModifier, Random.Range(min, max), Random.Range(min, max) * xzModifier);
+        float xzModifier = 3f;
+
+        float i = Random.Range(1f, 10f);
+        int sign = Random.Range(0, 2) == 0 ? -1 : 1;
+        float xRotation = 10 + 2 * i * sign * xzModifier;
+
+        sign = Random.Range(0, 2) == 0 ? -1 : 1;
+        i = Random.Range(1f, 10f);
+        float yRotation = 5 + 2 * i * sign;
+
+        sign = Random.Range(0, 2) == 0 ? -1 : 1;
+        i = Random.Range(1f, 10f);
+        float zRotation = 10 + 2 * i * sign * xzModifier;
+
+        var rot = new Vector3(xRotation, yRotation, zRotation);
         rot.Normalize();
         _rb.AddTorque(rot * RandomRotationTorque);
     }
@@ -234,60 +261,99 @@ public class BeamableObject : MonoBehaviour
 
     private void DrawJointLine()
     {
-        // initialize line renderers
+        // initialize line renderer
         if (line == null)
         {
             line = gameObject.AddComponent<LineRenderer>();
-
-            // recreate the curved line renderer
-            if (curvedLine != null) Destroy(curvedLine);
-            curvedLine = gameObject.AddComponent<CurvedLineRenderer>();
         }
 
-        // set line renderer properties
-        line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderWidth;
-        line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderWidth;
+        // set default line renderer properties
+        line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderStartWidth;
+        line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderEndWidth;
         line.material = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderMaterial;
         line.startColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
         line.endColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
 
-        // create the curved line points
-        DrawJointPoints();
-    }
-
-    private void DrawJointPoints()
-    {
-        if (_drawPoints == null || _drawPoints.Length == 0) _drawPoints = new GameObject[3];
-        Vector3[] _drawTransforms = GetJointDrawPointTransforms();
-
-        for (int i = 0; i < _drawPoints.Length; i++)
+        // create or update the draw points
+        Vector3[] _drawTransforms = DrawTransforms();
+        line.positionCount = _drawTransforms.Length;
+        for (int i = 0; i < _drawTransforms.Length; i++)
         {
-            if (_drawPoints[i] == null) _drawPoints[i] = CreateJointDrawPoint(_drawTransforms[i]);
-            GameObject _o = _drawPoints[i];
-            _o.transform.position = _drawTransforms[i];
-            _drawPoints[i] = _o;
+            line.SetPosition(i, _drawTransforms[i]);
         }
     }
 
-    private Vector3[] GetJointDrawPointTransforms()
+    
+    private void DrawJointLineCurved()
     {
-        return new Vector3[3] { _beam.transform.position, _beam.transform.position + _springJoint.connectedAnchor, transform.position };
+        // initialize line renderer
+        if (line == null)
+        {
+            line = gameObject.AddComponent<LineRenderer>();
+
+            // set default line renderer properties
+            line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderStartWidth;
+            line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderEndWidth;
+            line.material = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderMaterial;
+            line.startColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+            line.endColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+        }
+
+        // create or update the draw points
+        SetCurvedDrawPoints();
+
+        // create or update the curved line renderer
+        if (curvedLine == null) curvedLine = gameObject.AddComponent<CurvedLineRenderer>();
+        else curvedLine.ManualUpdate();
     }
 
-    GameObject CreateJointDrawPoint(Vector3 drawPos)
+    private Vector3 AnchorPivotPosition()
     {
-        GameObject _gameObject = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
-        _gameObject.transform.parent = transform;
-        _gameObject.transform.position = drawPos;
-        return _gameObject;
+        MeshFilter _meshFilter = GetComponent<MeshFilter>();
+        if (_meshFilter == null)
+        {
+            return Vector3.zero;
+        }
+        return _meshFilter.mesh.bounds.center;
     }
 
-    void RedrawJointDrawPoint(GameObject drawPoint, Vector3 drawPos)
+    private Vector3[] DrawTransforms()
     {
-        drawPoint.transform.position = drawPos;
+        return new Vector3[3] {
+                _beam.transform.position,
+                _beam.transform.position + _springJoint.connectedAnchor,
+                transform.position + transform.TransformDirection(AnchorPivotPosition()),
+            };
     }
 
-    private void ClearJointLine()
+    private void SetCurvedDrawPoints()
+    {
+        // transform locations to curve the line around
+        Vector3[] _drawTransforms = DrawTransforms();
+
+        for (int i = 0; i < _drawPoints.Length; i++)
+        {
+            // create the point if necessary
+            if (_drawPoints[i] == null) _drawPoints[i] = CreateDrawPoint();
+
+            // draw the point location
+            _drawPoints[i].transform.position = _drawTransforms[i];
+        }
+    }
+
+
+    GameObject CreateDrawPoint()
+    {
+        // create curved line point
+        GameObject point = new GameObject("Curved Line Point", typeof(CurvedLinePoint));
+
+        // assign the point as a child of the curved line
+        point.transform.parent = transform;
+
+        return point;
+    }
+
+    private void DestroyDrawPoints()
     {
         if (_drawPoints != null)
         {
@@ -296,12 +362,11 @@ public class BeamableObject : MonoBehaviour
                 Destroy(_drawPoints[i]);
             }
         }
+    }
+    private void DestroyJointLine()
+    {
+        DestroyDrawPoints();
         if (curvedLine != null) Destroy(curvedLine);
-        if (line != null)
-        {
-            line.endWidth = 0f;
-            line.startWidth = 0f;
-            Destroy(line);
-        }
+        if (line != null) Destroy(line);
     }
 }

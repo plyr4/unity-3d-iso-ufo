@@ -115,8 +115,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _grabbed: 0
-  _rb: {fileID: 9109299349565796346}
+  RandomRotationTorque: 10
+  TrackBeamableObjectJointChanges: 1
+  isTethered: 0
+  _beam: {fileID: 0}
 --- !u!114 &8242979246213552930
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -48,13 +48,13 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float ElevationBoundsPrecisionCoefficient = 0.001f;
     [SerializeField]
-    [Range(0f, 100f)]
+    [Range(0f, 500f)]
     private float MaxElevationSpringForce = 100f;
     [SerializeField]
-    [Range(0.01f, 200f)]
+    [Range(0.01f, 500f)]
     private float ElevationSpringStrength = 100f;
     [SerializeField]
-    [Range(0f, 10f)]
+    [Range(0f, 200f)]
     private float ElevationSpringDamper = 0.2f;
     [SerializeField]
     private LayerMask GroundLayers;
