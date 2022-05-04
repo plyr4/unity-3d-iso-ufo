@@ -155,6 +155,23 @@ public class TractorBeam : MonoBehaviour
     {
         DrawBeamDepthRay();
         DrawBeamPickupSphere();
+        DrawTetherJoints();
+
+    }
+    private void DrawTetherJoints()
+    {   if (_tetheredBeamables == null) return;
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+        {
+            // joint.anchor
+            // should be in the center of the hanging object
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(_beamable._gameObject.transform.position + _beamable._gameObject.transform.TransformDirection(_beamable._joint.anchor), 0.2f);
+
+            // joint.connectedAnchor
+            // should be in the beam
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(_beamable._joint.connectedBody.transform.position + _beamable._joint.connectedAnchor, 0.2f);
+        }
     }
 
     private void InitializeInputs()
@@ -288,24 +305,21 @@ public class TractorBeam : MonoBehaviour
         // pull up any objects in the beam
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.Retract();
     }
-
+    private bool IsHoldingUnretractedBeamables () {
+        Beamable _tetherBeamable = _tetheredBeamables.Values.FirstOrDefault(_b=>!_b._retract);
+        return _tetherBeamable != null;
+    }
     private void UpdateBeamables()
     {
         // draw or clear the beam line
-        if (_tetheredBeamables.Count > 0 && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(gameObject, _line, AnchorDepth());
+        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables () && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
         else TetherJoints.ClearJointLine(_line);
 
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
-        {
-            if (!IsRetracted(_beamable._joint))
-            {
-                _beamable.Update(TrackBeamableObjectJointChanges, AnchorDepth());
-            }
-        }
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.HandleUpdate(this);
     }
     private void FixedUpdateBeamables()
     {
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.FixedUpdate(TrackBeamableObjectJointChanges, AnchorDepth());
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.HandleFixedUpdate(this);
     }
 
     private void AbsorbBeamables()
@@ -464,33 +478,30 @@ public class TractorBeam : MonoBehaviour
 
             _joint = TetherJoints.CreateTether(obj, beam);
 
-            // MeshColliders.SetMeshCollidersToConvex(_gameObject);
+            MeshColliders.SetMeshCollidersToConvex(_gameObject);
 
             _rb = _gameObject.GetComponent<Rigidbody>();
             _rb.isKinematic = false;
 
             _originalMass = _rb.mass;
-            // _rb.mass = _originalMass / 2f;
 
-            // _rb.AddTorque(RandomSpin.GetRandomSpin() * 10f);
+            _rb.AddTorque(RandomSpin.GetRandomSpin() * 10f);
         }
 
-        public void Update(bool trackChanges, float depth)
+        public void HandleUpdate(TractorBeam beam)
         {
             // draw the beam
             if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _joint);
             else TetherJoints.ClearJointLine(_line);
-
-            FixedUpdate(trackChanges, depth);
         }
 
 
-        public void FixedUpdate(bool trackChanges, float depth)
+        public void HandleFixedUpdate( TractorBeam beam)
         {
-            if (trackChanges) TetherJoints.UpdateConstantJointProperties(_joint);
+            if (_joint == null) return;
+            if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_joint, _retract);
 
-            TetherJoints.UpdateJointProperties(_joint, _retract, depth);
-
+            TetherJoints.UpdateJointProperties(_joint, beam);
 
             // this controls joint retraction
             // when fully retracted the beamable is absorbed
@@ -498,10 +509,9 @@ public class TractorBeam : MonoBehaviour
             {
                 TetherJoints.RetractJoint(_joint);
             }
-            else
-            {
-                TetherJoints.SetLinearLimit(_joint, GameConstants.Instance()._beamAttributes.BeamGrabLinearLimit);
-            }
+
+            // slow down the object
+            _rb.velocity = _rb.velocity * 0.9f;
         }
 
         public void Retract()
@@ -516,12 +526,8 @@ public class TractorBeam : MonoBehaviour
             Destroy(_joint);
         }
     }
-
     public float AnchorDepth()
     {
         return _beamDepth * GameConstants.Instance()._beamAttributes.BeamGrabAnchorDepthCoefficient;
     }
-
-
-
 }

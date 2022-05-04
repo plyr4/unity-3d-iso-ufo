@@ -12,9 +12,6 @@ public class BeamAttributes : MonoBehaviour
     public float BeamRetractionSpeed = 1f;
 
     [SerializeField]
-    public float BeamGrabLinearLimit = 2f;
-
-    [SerializeField]
     public float BeamGrabAnchorDepthCoefficient = 0.5f;
 
     [SerializeField]
@@ -51,11 +48,8 @@ public class BeamAttributes : MonoBehaviour
         // beam retraction speed
         BeamRetractionSpeed = 1f;
 
-        // beam grab joint leeway
-        BeamGrabLinearLimit = 2f;
-
         // beam grab depth ratio
-        BeamGrabAnchorDepthCoefficient = 0.5f;
+        BeamGrabAnchorDepthCoefficient = 0.75f;
 
         // beam draw the joints
         BeamDrawJoints = false;
