@@ -43,7 +43,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 150946}
-  m_Mesh: {fileID: 4300002, guid: d3fe446af3c13864995931e40d4b9ca4, type: 3}
+  m_Mesh: {fileID: 4300002, guid: 25c61bc2335af47439cb56250b46caca, type: 3}
 --- !u!23 &2316090
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -63,8 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0de74cacf6310c64ca1b6862ba4b219c, type: 2}
-  - {fileID: 2100000, guid: 31b29cea830e0e24da72018652e5ed31, type: 2}
+  - {fileID: 2100000, guid: a42280ce03d0f6249ba10481d632ec03, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -144,5 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _grabbed: 0
-  _rb: {fileID: 0}
+  RandomRotationTorque: 10
+  TrackBeamableObjectJointChanges: 1
+  isTethered: 0
+  _beam: {fileID: 0}

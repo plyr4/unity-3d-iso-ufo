@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 5320911622251230169}
   - component: {fileID: 5320911622254654457}
   - component: {fileID: 5320911622253654329}
-  - component: {fileID: 1804650959376422132}
   - component: {fileID: 4890972101195259140}
   - component: {fileID: 8299603021426103372}
   - component: {fileID: 7177243023207788093}
@@ -44,7 +43,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5320911622251720697}
-  m_Mesh: {fileID: 4300000, guid: 350ab8da0b56d2b4b9ac89318350c1b0, type: 3}
+  m_Mesh: {fileID: 4300000, guid: e8260a49b70088c4a9c2263623eedd57, type: 3}
 --- !u!23 &5320911622253654329
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -64,8 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 87ff71ffc286b91449d2296928632aed, type: 2}
-  - {fileID: 2100000, guid: d07dc9a550022a74792d211f343e0b16, type: 2}
+  - {fileID: 2100000, guid: a42280ce03d0f6249ba10481d632ec03, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -87,20 +85,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &1804650959376422132
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5320911622251720697}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 0
-  serializedVersion: 4
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 350ab8da0b56d2b4b9ac89318350c1b0, type: 3}
 --- !u!54 &4890972101195259140
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -129,8 +113,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _grabbed: 0
-  _rb: {fileID: 4890972101195259140}
+  RandomRotationTorque: 10
+  TrackBeamableObjectJointChanges: 1
+  isTethered: 0
+  _beam: {fileID: 0}
 --- !u!136 &7177243023207788093
 CapsuleCollider:
   m_ObjectHideFlags: 0

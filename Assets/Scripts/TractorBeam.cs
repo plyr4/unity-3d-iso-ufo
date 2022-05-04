@@ -24,7 +24,7 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     private bool LockBeamStrength;
     [SerializeField]
-    private bool LockFire;
+    public bool LockFire;
     [SerializeField]
     private bool LockAltFire;
     [Space]
@@ -46,11 +46,14 @@ public class TractorBeam : MonoBehaviour
     [Range(0f, 1f)]
     private float StrengthToGrab = 0.95f;
     [SerializeField]
+    private bool TrackBeamableObjectJointChanges = false;
+    [SerializeField]
     private LayerMask GroundLayers;
     [SerializeField]
     private LayerMask BeamableLayers;
     private RaycastHit[] _inBeam;
-    private Dictionary<int, BeamableObject> _tetheredBeamables;
+    private Dictionary<int, Beamable> _tetheredBeamables;
+    private LineRenderer _line;
 
     [Header("Light Settings")]
     [Space]
@@ -125,7 +128,7 @@ public class TractorBeam : MonoBehaviour
         _inBeam = new RaycastHit[0];
 
         // initialize beamable objects
-        _tetheredBeamables = new Dictionary<int, BeamableObject>();
+        _tetheredBeamables = new Dictionary<int, Beamable>();
 
         // initialize beam properties
         UpdateBeamProperties();
@@ -134,11 +137,13 @@ public class TractorBeam : MonoBehaviour
     private void Update()
     {
         UpdateBeamStrength();
+        UpdateBeamables();
     }
 
     private void FixedUpdate()
     {
         UpdateBeamProperties();
+        FixedUpdateBeamables();
         ResetLightColors();
         if (Fire()) FireBeam();
         if (!Fire()) ReleaseBeam();
@@ -174,12 +179,14 @@ public class TractorBeam : MonoBehaviour
         if (_vlb == null) _vlb = transform.parent.GetComponent<VolumetricLightBeam>();
     }
 
-    private bool Fire() {
+    private bool Fire()
+    {
         return LockFire || _input.fire;
     }
 
 
-    private bool AltFire() {
+    private bool AltFire()
+    {
         return LockAltFire || _input.altFire;
     }
 
@@ -227,101 +234,120 @@ public class TractorBeam : MonoBehaviour
         {
             for (int i = _inBeam.Length - 1; i >= 0; i--)
             {
-                // ignore the player
-                if (_inBeam[i].collider.gameObject.tag == "Player") continue;
+                GameObject _object = _inBeam[i].collider.gameObject;
 
-                BeamableObject _beamable = _inBeam[i].collider.gameObject.GetComponent<BeamableObject>();
+                if (IsObjectTethered(_object)) continue;
 
-                // ignore non-beamables
-                if (_beamable == null) continue;
+                // if beam is full
+                if (_tetheredBeamables.Count >= MaxBeamableObjects)
+                {
+                    DenyTether(_object);
+                    continue;
+                }
 
-                // tether to the beamable if possible
-                AttemptTether(_beamable);
+                Tether(_object);
             }
         }
+    }
+
+    public void Tether(GameObject obj)
+    {
+        // destroy an existing tether
+        Beamable beamable = new Beamable(obj, this);
+
+        // add beamable to tethered dictionary
+        AddGrabbedBeamable(beamable);
+    }
+
+    public void Untether(Beamable beamable)
+    {
+        // remove tether
+        beamable.Untether();
+
+        // remove beamable from tethered dictionary
+        RemoveGrabbedBeamable(beamable);
+    }
+
+
+    public bool IsObjectTethered(GameObject obj)
+    {
+        return _tetheredBeamables.ContainsKey(obj.GetInstanceID());
     }
 
     private void ReleaseBeam()
     {
         // remove and untether any objects in the beam
-        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList())
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
-            AttemptUntether(_beamable);
+            Untether(_beamable);
         }
     }
 
     private void RetractBeam()
     {
         // pull up any objects in the beam
-        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList()) _beamable.RetractJoint();
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.Retract();
+    }
+
+    private void UpdateBeamables()
+    {
+        // draw or clear the beam line
+        if (_tetheredBeamables.Count > 0 && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(gameObject, _line, AnchorDepth());
+        else TetherJoints.ClearJointLine(_line);
+
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+        {
+            if (!IsRetracted(_beamable._joint))
+            {
+                _beamable.Update(TrackBeamableObjectJointChanges, AnchorDepth());
+            }
+        }
+    }
+    private void FixedUpdateBeamables()
+    {
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.FixedUpdate(TrackBeamableObjectJointChanges, AnchorDepth());
     }
 
     private void AbsorbBeamables()
     {
         // absorb any retracted beamables
-        foreach (BeamableObject _beamable in _tetheredBeamables.Values.ToList())
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
-            if (_beamable.Retracted())
+            if (IsRetracted(_beamable._joint))
             {
                 AbsorbBeamable(_beamable);
             }
         }
     }
 
-    private void AbsorbBeamable(BeamableObject beamable)
+    public bool IsRetracted(ConfigurableJoint joint)
+    {
+        return joint.linearLimit.limit <= 0.001f;
+    }
+
+    private void AbsorbBeamable(Beamable beamable)
     {
         // untether the beamable
-        AttemptUntether(beamable);
+        Untether(beamable);
 
         // destroy the object
-        Destroy(beamable.gameObject);
+        Destroy(beamable._gameObject);
     }
 
-    private void AttemptTether(BeamableObject beamable)
-    {
-        // if beam is full
-        if (_tetheredBeamables.Count >= MaxBeamableObjects)
-        {
-            DenyTether(beamable);
-            return;
-        }
-
-        // tether beamable
-        if (!beamable.Tethered()) beamable.Tether(this);
-
-        // add beamable to the beam
-        AddGrabbedBeamable(beamable);
-    }
-
-    private void AttemptUntether(BeamableObject beamable)
-    {
-        // untether beamable
-        if (beamable.Tethered()) beamable.Untether();
-
-        // remove beamable from the beam
-        RemoveGrabbedBeamable(beamable);
-    }
-
-    private void DenyTether(BeamableObject beamable)
+    private void DenyTether(GameObject obj)
     {
         // Debug.Log("implement this with some static object wiggle or something");
     }
 
-    private void AddGrabbedBeamable(BeamableObject beamable)
+    private void AddGrabbedBeamable(Beamable beamable)
     {
-        _tetheredBeamables[beamable.gameObject.GetInstanceID()] = beamable;
+        _tetheredBeamables[beamable._gameObject.GetInstanceID()] = beamable;
     }
 
-    private void RemoveGrabbedBeamable(BeamableObject beamable)
+    private void RemoveGrabbedBeamable(Beamable beamable)
     {
-        _tetheredBeamables.Remove(beamable.gameObject.GetInstanceID());
+        _tetheredBeamables.Remove(beamable._gameObject.GetInstanceID());
     }
-
-    private void ClearGrabbedBeamables(BeamableObject beamable)
-    {
-        _tetheredBeamables.Clear();
-    }
-
     private float GetBeamDepth()
     {
         // sends Raycast to the terrain and returns either distance to hit or MaxBeamDepth
@@ -404,4 +430,98 @@ public class TractorBeam : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere((_beamSource.position) + BeamDirection() * AdjustedBeamDistance(), AdjustedBeamRadius());
     }
+
+
+
+
+
+
+
+
+
+
+
+
+    // BEAMABLE OBJECT GARBAGE
+
+
+    public class Beamable
+    {
+        public GameObject _gameObject;
+        public int _instanceID;
+        public ConfigurableJoint _joint;
+        public bool _retract = false;
+        public Rigidbody _rb;
+        public float _originalMass;
+
+        // TODO: optimize
+        public LineRenderer _line;
+
+        public Beamable(GameObject obj, TractorBeam beam)
+        {
+            _gameObject = obj;
+            _instanceID = _gameObject.GetInstanceID();
+
+            _joint = TetherJoints.CreateTether(obj, beam);
+
+            // MeshColliders.SetMeshCollidersToConvex(_gameObject);
+
+            _rb = _gameObject.GetComponent<Rigidbody>();
+            _rb.isKinematic = false;
+
+            _originalMass = _rb.mass;
+            // _rb.mass = _originalMass / 2f;
+
+            // _rb.AddTorque(RandomSpin.GetRandomSpin() * 10f);
+        }
+
+        public void Update(bool trackChanges, float depth)
+        {
+            // draw the beam
+            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _joint);
+            else TetherJoints.ClearJointLine(_line);
+
+            FixedUpdate(trackChanges, depth);
+        }
+
+
+        public void FixedUpdate(bool trackChanges, float depth)
+        {
+            if (trackChanges) TetherJoints.UpdateConstantJointProperties(_joint);
+
+            TetherJoints.UpdateJointProperties(_joint, _retract, depth);
+
+
+            // this controls joint retraction
+            // when fully retracted the beamable is absorbed
+            if (_retract)
+            {
+                TetherJoints.RetractJoint(_joint);
+            }
+            else
+            {
+                TetherJoints.SetLinearLimit(_joint, GameConstants.Instance()._beamAttributes.BeamGrabLinearLimit);
+            }
+        }
+
+        public void Retract()
+        {
+            _retract = true;
+        }
+
+        public void Untether()
+        {
+            _rb.mass = _originalMass;
+            TetherJoints.ClearJointLine(_line);
+            Destroy(_joint);
+        }
+    }
+
+    public float AnchorDepth()
+    {
+        return _beamDepth * GameConstants.Instance()._beamAttributes.BeamGrabAnchorDepthCoefficient;
+    }
+
+
+
 }
