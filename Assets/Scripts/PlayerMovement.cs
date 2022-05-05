@@ -48,11 +48,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float ElevationBoundsPrecisionCoefficient = 0.001f;
     [SerializeField]
+    ForceMode _ForceMode;
+    [SerializeField]
     [Range(0f, 500f)]
     private float MaxElevationSpringForce = 100f;
     [SerializeField]
     [Range(0.01f, 500f)]
     private float ElevationSpringStrength = 100f;
+    [SerializeField]
+    [Range(0.01f, 500f)]
+    private float ElevationBoundsSpringStrength = 100f;
     [SerializeField]
     [Range(0f, 200f)]
     private float ElevationSpringDamper = 0.2f;
@@ -72,6 +77,7 @@ public class PlayerMovement : MonoBehaviour
     private float VerticalBoostMaxSpeed = 14f;
     [SerializeField]
     private float VerticalAcceleration = 4f;
+    private float _targetElevation;
 
     // cached elevation properties
     private float _cachedTime;
@@ -131,12 +137,13 @@ public class PlayerMovement : MonoBehaviour
     {
         _cameraOffset = _mainCameraPivot.transform.position - transform.position;
         if (_mainCamera == null) _mainCamera = _mainCameraPivot.GetComponentInChildren<Camera>();
+        _targetElevation = GetGroundDistance();
     }
 
     private void FixedUpdate()
     {
-        MoveHorizontal();
-        MoveVertical();
+        MoveHorizontalWithForce();
+        MoveVerticalWithForce();
         ClampVerticalMovement();
         RotateAnimationBody();
         RotateCamera();
@@ -190,6 +197,28 @@ public class PlayerMovement : MonoBehaviour
 
         // apply the calculated horizontal velocity
         _rb.velocity = new Vector3(_horizontalMovement.x, _rb.velocity.y, _horizontalMovement.z);
+    }
+
+    private void MoveHorizontalWithForce()
+    {
+        // capture relevant input axis
+        Vector3 _horizontalInput = new Vector3(_input.horizontalMove.x, 0f, _input.horizontalMove.y);
+        Vector3 _cameraDirectedInput = AngleLeft() * _mainCameraPivot.TransformDirection(_horizontalInput.normalized);
+        float inputMagnitude = IsCurrentDeviceMouse ? 1f : _horizontalInput.magnitude;
+
+        if (_horizontalInput == Vector3.zero) _rb.velocity = _rb.velocity * 0.9f;
+        // if ( (_horizontalInput.x > 0 && _rb.velocity.x < 0) ||  (_horizontalInput.x < 0 && _rb.velocity.x > 0)) {
+        //     _rb.velocity = _rb.velocity * 0.9f;
+        // } else if ( (_horizontalInput.z > 0 && _rb.velocity.z < 0) ||  (_horizontalInput.z < 0 && _rb.velocity.z > 0)) {
+        //     _rb.velocity = _rb.velocity * 0.9f;
+        // }
+        float _maxSpeed = (_input.boost ? HorizontalBoostMaxSpeed : HorizontalMaxSpeed);
+
+        _rb.AddForce(_cameraDirectedInput * inputMagnitude * _maxSpeed, _ForceMode);
+
+        _maxSpeed= 14f;
+        _rb.velocity = new Vector3(Mathf.Clamp(_rb.velocity.x, -_maxSpeed, _maxSpeed), _rb.velocity.y, _rb.velocity.z);
+        _rb.velocity = new Vector3(_rb.velocity.x, _rb.velocity.y, Mathf.Clamp(_rb.velocity.z, -_maxSpeed, _maxSpeed));
     }
 
     private void MoveVertical()
@@ -253,13 +282,63 @@ public class PlayerMovement : MonoBehaviour
         _rb.velocity = new Vector3(_rb.velocity.x, _verticalMovement.y, _rb.velocity.z);
     }
 
-    private void ClampVerticalMovement()
+
+    private void MoveVerticalWithForce()
     {
-        if (!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MinVerticalElevation);
-        if (!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MaxVerticalElevation);
+        // capture relevant input axis
+        Vector3 _verticalInput = new Vector3(0f, _input.verticalMove.y, 0f);
+
+        // player is moving out of bounds
+        if ((!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient) && HasUpwardVerticalInput()))
+        {
+            // restrict movement input
+            _verticalInput = Vector3.zero;
+        }
+
+        // player is moving out of bounds
+        if ((!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient) && HasDownwardVerticalInput()))
+        {
+            // restrict movement input
+            _verticalInput = Vector3.zero;
+        }
+
+        float _maxSpeed = (_input.boost ? VerticalBoostMaxSpeed : VerticalMaxSpeed);
+        Vector3 direction = _verticalInput.y > 0f ? Vector3.up : (_verticalInput.y < 0f ? Vector3.down : Vector3.zero);
+
+        float inputMagnitude = IsCurrentDeviceMouse ? 1f : _verticalInput.magnitude;
+
+        if (_verticalInput == Vector3.zero) _rb.velocity = _rb.velocity * 0.9f;
+        if ((HasDownwardVerticalInput() && _rb.velocity.y > 0) || (HasUpwardVerticalInput() && _rb.velocity.y < 0))
+        {
+            _rb.velocity = _rb.velocity * 0.9f;
+        }
+
+        _rb.AddForce(_verticalInput.normalized * inputMagnitude * _maxSpeed, _ForceMode);
+        if (Mathf.Abs(_rb.velocity.y - _maxSpeed) > ApproximationPrecision) _rb.velocity = new Vector3(_rb.velocity.x, Mathf.Clamp(_rb.velocity.y, -_maxSpeed, _maxSpeed), _rb.velocity.z);
     }
 
-    private void MoveToElevation(float targetElevation)
+    private void ClampVerticalMovement()
+    {
+        // if (!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MinVerticalElevation, ElevationBoundsSpringStrength);
+        // else if (!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MaxVerticalElevation, ElevationBoundsSpringStrength);
+
+        // Project where our velocity will take us by the end of the frame.
+        Vector3 positionAtEndOfStep = _rb.position + _rb.velocity * Time.deltaTime;
+
+        // Limit that projected position to within our allowed bounds.
+        positionAtEndOfStep.y = Mathf.Clamp(positionAtEndOfStep.y, MinVerticalElevation, MaxVerticalElevation);
+
+        // Compute a velocity that will take us to this clamped position instead.
+        Vector3 neededVelocity = (positionAtEndOfStep - _rb.position) / Time.deltaTime;
+
+        // You can also calculate this as the needed velocity change/acceleration,
+        // and add it as a force instead if you prefer.
+        _rb.velocity = neededVelocity;
+
+        // else MoveToElevation(_targetElevation, ElevationSpringStrength);
+    }
+
+    private void MoveToElevation(float targetElevation, float power)
     {
         // use the cached ground hit
         if (_groundIsHit)
@@ -289,7 +368,7 @@ public class PlayerMovement : MonoBehaviour
 
             // calculate the force to spring the object towards the desired elevation
             //    adjust strength and damper to apply different spring
-            float _springForce = (_distanceToElevation * ElevationSpringStrength) - (_relativeVelocity * ElevationSpringDamper);
+            float _springForce = (_distanceToElevation * power) - (_relativeVelocity * ElevationSpringDamper);
 
             // clamp maximum spring force
             if (MaxElevationSpringForce != 0f) _springForce = Mathf.Clamp(_springForce, -MaxElevationSpringForce, MaxElevationSpringForce);
