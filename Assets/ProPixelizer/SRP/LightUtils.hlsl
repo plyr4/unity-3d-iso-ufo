@@ -13,7 +13,7 @@
 #define CUSTOM_LIGHTING_INCLUDED
 
 // For correct cel shading, you also need to define the _SPECULARHIGHLIGHTS_OFF keyword
-
+// #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Version.hlsl"
 
 #if VERSION_GREATER_EQUAL(10, 0)
@@ -32,7 +32,7 @@ void MainLightShadow_float(float4 positionWS, out float shadow) {
 #endif
 
 	#if VERSION_GREATER_EQUAL(10, 1)
-		shadow = MainLightShadow(shadowCoord, positionWS, half4(1, 1, 1, 1), _MainLightOcclusionProbes);
+		shadow = MainLightShadow(shadowCoord, positionWS.xyz, half4(1, 1, 1, 1), _MainLightOcclusionProbes);
 	#else
 		shadow = MainLightRealtimeShadow(shadowCoord);
 	#endif
@@ -52,7 +52,7 @@ void MainLightShadow_half(float4 positionWS, out half shadow) {
 #endif
 
 	#if VERSION_GREATER_EQUAL(10, 1)
-		shadow = MainLightShadow(shadowCoord, positionWS, half4(1, 1, 1, 1), _MainLightOcclusionProbes);
+		shadow = MainLightShadow(shadowCoord, positionWS.xyz, half4(1, 1, 1, 1), _MainLightOcclusionProbes);
 	#else
 		shadow = MainLightRealtimeShadow(shadowCoord);
 	#endif

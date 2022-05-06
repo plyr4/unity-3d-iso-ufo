@@ -18,21 +18,26 @@ public class PixelisationFeature : ScriptableRendererFeature
 
     public float NormalEdgeDetectionSensitivity = 1f;
 
-    [Tooltip("Which buffer to use for pixelization. ProPixelizer always used SceneColor before v1.6. Use ProPixelizerMetadata if you wish to use HDR.")]
-    public PixelizationPass.PixelizationSource SourceBufferForPixelization;
+    [HideInInspector, SerializeField]
+    PixelizationPass.ShaderResources PixelizationShaders;
+    [HideInInspector, SerializeField]
+    OutlineDetectionPass.ShaderResources OutlineShaders;
 
     PixelizationPass _PixelisationPass;
     OutlineDetectionPass _OutlinePass;
 
     public override void Create()
     {
-        _PixelisationPass = new PixelizationPass();
-        _PixelisationPass.SourceBuffer = SourceBufferForPixelization;
-        _OutlinePass = new ProPixelizer.OutlineDetectionPass();
+        PixelizationShaders = new PixelizationPass.ShaderResources().Load();
+        _PixelisationPass = new PixelizationPass(PixelizationShaders);
+        _PixelisationPass.SourceBuffer = PixelizationPass.PixelizationSource.ProPixelizerMetadata;
+        OutlineShaders = new OutlineDetectionPass.ShaderResources().Load();
+        _OutlinePass = new OutlineDetectionPass(OutlineShaders);
         _OutlinePass.DepthTestOutlines = UseDepthTestingForIDOutlines;
         _OutlinePass.DepthTestThreshold = DepthTestThreshold;
         _OutlinePass.UseNormalsForEdgeDetection = UseNormalsForEdgeDetection;
         _OutlinePass.NormalEdgeDetectionSensitivity = NormalEdgeDetectionSensitivity;
+        ProPixelizerVerification.Check();
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

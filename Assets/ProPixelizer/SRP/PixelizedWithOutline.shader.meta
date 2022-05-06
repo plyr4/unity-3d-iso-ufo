@@ -3,13 +3,16 @@ guid: 71d6765ad72e11541bc1448c891bbcf9
 ShaderImporter:
   externalObjects: {}
   defaultTextures:
-  - Texture2D_F406AA7C: {fileID: 2800000, guid: 211497300d75d8e4b9b3e2913a93e908,
-      type: 3}
-  - Texture2D_A4CD04C4: {instanceID: 0}
-  - Texture2D_FBC26130: {instanceID: 0}
-  - Texture2D_4084966E: {instanceID: 0}
-  - Texture2D_9A2EA9A0: {instanceID: 0}
+  - _LightingRamp: {fileID: 2800000, guid: 211497300d75d8e4b9b3e2913a93e908, type: 3}
+  - _PaletteLUT: {fileID: 2800000, guid: cb20b3bfa4de9cd4084d3626193b6898, type: 3}
+  - _Albedo: {instanceID: 0}
+  - _NormalMap: {instanceID: 0}
+  - _Emission: {instanceID: 0}
+  - unity_Lightmaps: {instanceID: 0}
+  - unity_LightmapsInd: {instanceID: 0}
+  - unity_ShadowMasks: {instanceID: 0}
   nonModifiableTextures: []
+  preprocessorOverride: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 

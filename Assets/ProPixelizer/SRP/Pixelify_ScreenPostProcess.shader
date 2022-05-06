@@ -1,5 +1,6 @@
 ﻿// Copyright Elliot Bentine, 2018-
-Shader "Hidden/ProPixelizer/SRP/Screen Post Process" {
+// DEPRECATED
+Shader "Hidden/ProPixelizer/Deprecated/SRP/Screen Post Process" {
 	Properties{
 		_OutlineDepthTestThreshold("Threshold used for depth testing outlines.", Float) = 0.0001
 	}
@@ -26,7 +27,7 @@ Shader "Hidden/ProPixelizer/SRP/Screen Post Process" {
 			#pragma target 2.5
 			#pragma vertex vert
 			#pragma fragment frag
-			#pragma shader_feature DEPTH_TEST_OUTLINES_ON
+			#pragma multi_compile DEPTH_TEST_OUTLINES_ON
 
 			#if DEPTH_TEST_OUTLINES_ON
 			float _OutlineDepthTestThreshold;

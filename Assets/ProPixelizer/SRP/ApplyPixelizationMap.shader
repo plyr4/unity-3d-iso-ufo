@@ -25,12 +25,14 @@ Shader "Hidden/ProPixelizer/SRP/ApplyPixelizationMap" {
 		#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 		#include "PixelUtils.hlsl"
 		#include "PackingUtils.hlsl"
-		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+		//#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
 		TEXTURE2D(_PixelizationMap);
 		TEXTURE2D(_MainTex);
 		SAMPLER(sampler_point_clamp);
 		float4 _MainTex_TexelSize;
+		TEXTURE2D_X_FLOAT(_SourceDepthTexture);
+		TEXTURE2D_X_FLOAT(_SceneDepthTexture);
 
 		struct v2f {
 			float4 pos : SV_POSITION;
@@ -53,11 +55,26 @@ Shader "Hidden/ProPixelizer/SRP/ApplyPixelizationMap" {
 		void frag(v2f i, out float4 color: COLOR, out float depth : SV_DEPTH) {
 			float4 packed = SAMPLE_TEXTURE2D(_PixelizationMap, sampler_point_clamp, i.scrPos.xy);
 			float2 uvs = UnpackPixelMapUV(packed, _MainTex_TexelSize); 
-			color = SAMPLE_TEXTURE2D(_MainTex, sampler_point_clamp, uvs.xy);
-			depth = SampleSceneDepth(uvs.xy);
+			color = SAMPLE_TEXTURE2D(_MainTex, sampler_point_clamp, uvs.xy); // scene color at pixelised coordinate
+			depth = SAMPLE_TEXTURE2D_X(_SceneDepthTexture, sampler_point_clamp, uvs.xy); // scene depth at pixelised coordinate
+			float4 original_color = SAMPLE_TEXTURE2D(_MainTex, sampler_point_clamp, i.scrPos.xy); // scene color at unpixelised coordinate
+			float original_depth = SAMPLE_TEXTURE2D_X(_SceneDepthTexture, sampler_point_clamp, i.scrPos.xy); // scene depth at unpixelised coordinate
+			float pixelated_depth = SAMPLE_TEXTURE2D_X(_SourceDepthTexture, sampler_point_clamp, uvs.xy).r; // depth at pixelised coordinate, of the pixelised object.
+
+			#if UNITY_REVERSED_Z
+				float delta = original_depth - pixelated_depth;
+			#else
+				float delta = pixelated_depth - original_depth;
+			#endif
+
+			if (delta > 0.0)
+			{
+				color = original_color;
+				depth = original_depth;
+			}
 		}
 		ENDHLSL
-	}
+		}
 	}
 	FallBack "Diffuse"
-	}
+}

@@ -1,5 +1,6 @@
 ﻿// Copyright Elliot Bentine, 2018-
 #if UNITY_EDITOR
+using ProPixelizer.Tools.Migration;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,6 +34,9 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
         if (GUILayout.Button("User Guide")) Application.OpenURL("https://sites.google.com/view/propixelizer/user-guide");
         EditorGUILayout.Space();
 
+        if (CheckForUpdate(materialEditor.serializedObject))
+            return;
+
         DrawAppearanceGroup(materialEditor, properties);
         DrawLightingGroup(materialEditor, properties);
         DrawPixelizeGroup(materialEditor, properties);
@@ -59,7 +63,7 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
         showColor = EditorGUILayout.BeginFoldoutHeaderGroup(showColor, "Appearance");
         if (showColor)
         {
-            var albedo = FindProperty("Texture2D_FBC26130", properties);
+            var albedo = FindProperty("_Albedo", properties);
             editor.TextureProperty(albedo, "Albedo", true);
 
             var baseColor = FindProperty("_BaseColor", properties);
@@ -69,25 +73,19 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
             editor.ShaderProperty(colorGrading, "Use Color Grading");
             if (colorGrading.floatValue > 0f)
             {
-                var lut = FindProperty("Texture2D_A4CD04C4", properties);
+                var lut = FindProperty("_PaletteLUT", properties);
                 editor.ShaderProperty(lut, "Palette");
             }
 
-            var normalMap = FindProperty("NORMAL_MAP", properties);
-            editor.ShaderProperty(normalMap, "Use Normal Map");
-            if (normalMap.floatValue > 0f)
-            {
-                var normal = FindProperty("Texture2D_4084966E", properties);
-                editor.TextureProperty(normal, "Normal Map", true);
-            }
+            var normal = FindProperty("_NormalMap", properties);
+            editor.TextureProperty(normal, "Normal Map", true);
 
-            var useEmission = FindProperty("USE_EMISSION", properties);
-            editor.ShaderProperty(useEmission, "Use Emission");
-            if (useEmission.floatValue > 0f)
-            {
-                var normal = FindProperty("Texture2D_9A2EA9A0", properties);
-                editor.TextureProperty(normal, "Emission", true);
-            }
+            var emission = FindProperty("_Emission", properties);
+            editor.TextureProperty(emission, "Emission", true);
+
+            var emissiveColor = FindProperty("_EmissionColor", properties);
+            editor.ColorProperty(emissiveColor, "Emission Color");
+            EditorGUILayout.HelpBox("Emission Color is multiplied by the Emission texture to determine the emissive output. The default emissive color and texture and both black.", MessageType.Info);
 
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
@@ -98,10 +96,10 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
         showLighting = EditorGUILayout.BeginFoldoutHeaderGroup(showLighting, "Lighting");
         if (showLighting)
         {
-            var ramp = FindProperty("Texture2D_F406AA7C", properties);
+            var ramp = FindProperty("_LightingRamp", properties);
             editor.ShaderProperty(ramp, "Lighting Ramp");
 
-            var ambient = FindProperty("Vector3_C98FB62A", properties);
+            var ambient = FindProperty("_AmbientLight", properties);
             editor.ShaderProperty(ambient, "Ambient Light");
 
             var receiveShadows = FindProperty("RECEIVE_SHADOWS", properties);
@@ -135,13 +133,8 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
         showAlpha = EditorGUILayout.BeginFoldoutHeaderGroup(showAlpha, "Alpha Cutout");
         if (showAlpha)
         {
-            var useAlpha = FindProperty("USE_ALPHA", properties);
-            editor.ShaderProperty(useAlpha, "Alpha Cutout");
-            if (useAlpha.floatValue > 0f)
-            {
-                var threshold = FindProperty("_AlphaClipThreshold", properties);
-                editor.ShaderProperty(threshold, "Threshold");
-            }
+            var threshold = FindProperty("_AlphaClipThreshold", properties);
+            editor.ShaderProperty(threshold, "Alpha Clip Threshold");
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
     }
@@ -166,6 +159,27 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
                 "You may need to enable the setting in the Pixelisation Feature on your Forward Renderer asset.", MessageType.Info);
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    /// <summary>
+    /// Checks if the serialized object needs to be updated, e.g. because properties changed between versions.
+    /// </summary>
+    /// <param name="so"></param>
+    public bool CheckForUpdate(SerializedObject so)
+    {
+        var updater = new ProPixelizer1_7MaterialUpdater();
+        if (updater.CheckForUpdate(so))
+        {
+            EditorGUILayout.HelpBox(
+                "Properties from a previous version of ProPixelizer detected. " +
+                "Press the button below to migrate material properties to new names.",
+                MessageType.Warning);
+            if (GUILayout.Button("Update"))
+                updater.DoUpdate(so);
+            EditorGUILayout.Space();
+            return true;
+        }
+        return false;
     }
 }
 #endif

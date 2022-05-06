@@ -33,6 +33,9 @@ namespace ProPixelizer.Tools
                     break;
                 case CameraSnapSRP.PixelSizeMode.UseCameraSize:
                     EditorGUILayout.HelpBox("The camera will use the size specified in the editor.", MessageType.Info);
+                    GUI.enabled = false;
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("PixelSize"));
+                    GUI.enabled = true;
                     break;
             }
 

@@ -1,20 +1,10 @@
 ﻿// Copyright Elliot Bentine, 2018-
 
+using UnityEngine;
+
 /// <summary>
-/// Snaps camera to position during rendering.
-/// Used to prevent jitter on pixels when moving camera.
+/// No longer used - empty stub left here to prevent broken references in the project.
 /// </summary>
-public class CameraRenderSnapable : AbstractRenderSnapable
+public class CameraRenderSnapable : MonoBehaviour
 {
-    /// <summary>
-    /// Camera angles are never snapped; returns false
-    /// </summary>
-    public override bool ShouldSnapAngles
-    { get { return false; } }
-
-    public override float OffsetBias => 0f;
-
-    public override void OnSnap()
-    {
-    }
 }

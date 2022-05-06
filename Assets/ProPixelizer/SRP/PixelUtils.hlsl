@@ -4,6 +4,8 @@
 #define ROUNDING_PREC 0.49
 #define SCRN_OFFSET 2000.0
 
+#include "ShadowCoordFix.hlsl"
+#pragma warning (disable : 3571) // Disable 'divide by zero' warning on line 65.
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Version.hlsl"
 #if VERSION_GREATER_EQUAL(10, 0)
 #include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -70,6 +72,7 @@ inline void PixelClipAlpha_float(float4x4 unity_MatrixVP, float3 objectCentreWS,
 		16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0
 	};
 	int index = mod(macroPixelDelta.x, 4) * 4 + mod(macroPixelDelta.y, 4);
+	index = clamp(index, 0, 15);
 	alpha_in = step(TRANSPARENCY_DITHER[index], alpha_in);
 
 	// Always draw edge pixels

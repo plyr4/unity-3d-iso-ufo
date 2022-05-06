@@ -1,26 +1,6 @@
 ﻿// Copyright Elliot Bentine, 2018-
-using UnityEngine;
-
-namespace Pixel3D
-{
-    /// <summary>
-    /// An interface for objects that can be snapped into position/orientation for rendering.
-    /// </summary>
-    public interface IRenderSnapable
-    {
-        /// <summary>
-        /// Save the current transform.
-        /// </summary>
-        void SaveTransform();
-
-        /// <summary>
-        /// Restore a previously save transform.
-        /// </summary>
-        void RestoreTransform();
-
-        /// <summary>
-        /// Snap object rotations
-        /// </summary>
-        void SnapAngles();
-    }
-}
+//
+// This class/file is no longer used by ProPixelizer. An empty file has been left so that
+// upgrading ProPixelizer using the 'import' function from package manager does not cause
+// compilation by errors by failing to delete the pre-existing file.
+//

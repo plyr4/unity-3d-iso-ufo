@@ -1,7 +1,9 @@
 ﻿// Copyright Elliot Bentine, 2018-
 // 
 // A shader used to pixelise render targets.
-Shader "Hidden/ProPixelizer/SRP/Pixelization Post Process" {
+//
+// DEPRECATED
+Shader "Hidden/ProPixelizer/Deprecated/SRP/Pixelization Post Process" {
 	Properties{
 	}
 

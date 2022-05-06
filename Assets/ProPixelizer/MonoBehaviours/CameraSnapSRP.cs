@@ -9,12 +9,11 @@ using UnityEngine.Rendering.Universal;
 /// Camera behaviour that snaps the positions of all RenderSnapables before rendering and releases them afterwards.
 /// </summary>
 [
-    RequireComponent(typeof(Camera)),
-    RequireComponent(typeof(CameraRenderSnapable))
+    RequireComponent(typeof(Camera))
     ]
 public class CameraSnapSRP : MonoBehaviour
 {
-    IEnumerable<AbstractRenderSnapable> _snapables;
+    IEnumerable<ObjectRenderSnapable> _snapables;
     Camera _camera;
 
     private void Start()
@@ -84,7 +83,12 @@ public class CameraSnapSRP : MonoBehaviour
             return;
         }
 
-        float renderScale = (QualitySettings.renderPipeline as UniversalRenderPipelineAsset).renderScale;
+        var pipelineAsset = QualitySettings.renderPipeline as UniversalRenderPipelineAsset;
+        if (pipelineAsset == null)
+            pipelineAsset = GraphicsSettings.renderPipelineAsset as UniversalRenderPipelineAsset;
+        if (pipelineAsset == null)
+            throw new System.Exception("Render pipeline asset in QualitySettings and GraphicsSettings are either null or not a UniversalRenderPipelineAsset.");
+        float renderScale = pipelineAsset.renderScale;
 
         //Find all objects required to snap and release.
         _snapables = new List<ObjectRenderSnapable>(FindObjectsOfType<ObjectRenderSnapable>());
@@ -96,7 +100,7 @@ public class CameraSnapSRP : MonoBehaviour
             snapable.SaveTransform();
 
         foreach (ObjectRenderSnapable snapable in _snapables)
-            snapable.SnapAngles();
+            snapable.SnapAngles(_camera);
 
         //Determine the size of a square screen pixel in world units.
         float pixelLength = (2f * _camera.orthographicSize) / (_camera.pixelHeight * renderScale);
@@ -108,27 +112,52 @@ public class CameraSnapSRP : MonoBehaviour
         // Snap all objects to integer pixels in camera space.
         foreach (ObjectRenderSnapable snapable in _snapables)
         {
-            Vector3 pixelPosCamSpace = worldToCam.MultiplyPoint(snapable.transform.position) / pixelLength;
-            var roundedPos = new Vector3(
-                Mathf.RoundToInt(pixelPosCamSpace.x) + snapable.OffsetBias,
-                Mathf.RoundToInt(pixelPosCamSpace.y) + snapable.OffsetBias,
-                Mathf.RoundToInt(pixelPosCamSpace.z) + snapable.OffsetBias
-                );
-            snapable.transform.position = (camToWorld.MultiplyPoint(roundedPos * pixelLength));
-            snapable.OnSnap();
+            Vector3 snappedPosition;
+            if (snapable.AlignPixelGrid)
+            {
+                var rootCamSpace = worldToCam.MultiplyPoint(snapable.PixelGridReferencePosition);
+                var snapableCamSpace = worldToCam.MultiplyPoint(snapable.WorldPositionPreSnap);
+                var delta = (snapableCamSpace - rootCamSpace);
+                var snapLength = snapable.GetPixelSize() * pixelLength;
+                var roundedDelta = new Vector3(
+                    Mathf.RoundToInt(delta.x / snapLength) + snapable.OffsetBias,
+                    Mathf.RoundToInt(delta.y / snapLength) + snapable.OffsetBias,
+                    Mathf.RoundToInt(delta.z / snapLength) + snapable.OffsetBias
+                    );
+                var roundedRootCamSpace = new Vector3(
+                    Mathf.RoundToInt(rootCamSpace.x / pixelLength),
+                    Mathf.RoundToInt(rootCamSpace.y / pixelLength),
+                    Mathf.RoundToInt(rootCamSpace.z / pixelLength)
+                    );
+                snappedPosition = camToWorld.MultiplyPoint(pixelLength * roundedRootCamSpace + roundedDelta * snapLength);
+            }
+            else
+            {
+                Vector3 pixelPosCamSpace = worldToCam.MultiplyPoint(snapable.transform.position) / pixelLength;
+                var roundedPos = new Vector3(
+                    Mathf.RoundToInt(pixelPosCamSpace.x) + snapable.OffsetBias,
+                    Mathf.RoundToInt(pixelPosCamSpace.y) + snapable.OffsetBias,
+                    Mathf.RoundToInt(pixelPosCamSpace.z) + snapable.OffsetBias
+                    );
+                snappedPosition = camToWorld.MultiplyPoint(roundedPos * pixelLength);
+            }
+            
+
+            if (snapable.SnapPosition)
+                snapable.transform.position = snappedPosition;
         }        
     }
 
     public void Release()
     {
-        //Note: the `release' loop is run in reverse.
-        //This prevents shaking and movement from occuring when
-        //parent and child transforms are both Snapable.
-        // eg A>B. Snap A, then B. Unsnap B, then A.
+        // Note: the `release' loop is run in reverse.
+        // This prevents shaking and movement from occuring when
+        // parent and child transforms are both Snapable.
+        //  e.g. For a heirachy A>B:
+        //   * Snap A, then B.
+        //   * Unsnap B, then A.
         // Doing Unsnap A, then unsnap B will produce jerking.
-        //
-        // This nesting should still be avoided.
-        foreach (AbstractRenderSnapable snapable in _snapables.Reverse())
+        foreach (ObjectRenderSnapable snapable in _snapables.Reverse())
             snapable.RestoreTransform();
     }
 }

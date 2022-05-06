@@ -1,4 +1,5 @@
 ﻿// Copyright Elliot Bentine, 2018-
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -10,9 +11,50 @@ namespace ProPixelizer
     /// </summary>
     public class OutlineDetectionPass : ProPixelizerPass
     {
-        public OutlineDetectionPass()
+        public OutlineDetectionPass(ShaderResources resources)
         {
             renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
+            Materials = new MaterialLibrary(resources);
+        }
+
+        private MaterialLibrary Materials;
+
+        /// <summary>
+        /// Shader resources used by the OutlineDetectionPass.
+        /// </summary>
+        [Serializable]
+        public sealed class ShaderResources
+        {
+            public Shader OutlineDetection;
+
+            public ShaderResources Load()
+            {
+                OutlineDetection = Shader.Find(OutlineDetectionShader);
+                return this;
+            }
+        }
+
+        /// <summary>
+        /// Materials used by the OutlineDetectionPass.
+        /// </summary>
+        public sealed class MaterialLibrary
+        {
+            private ShaderResources Resources;
+            public Material OutlineDetection
+            {
+                get
+                {
+                    if (_OutlineDetection == null)
+                        _OutlineDetection = new Material(Resources.OutlineDetection);
+                    return _OutlineDetection;
+                }
+            }
+            private Material _OutlineDetection;
+
+            public MaterialLibrary(ShaderResources resources)
+            {
+                Resources = resources;
+            }
         }
 
 
@@ -31,15 +73,14 @@ namespace ProPixelizer
         /// </summary>
         private int _OutlineBuffer;
 
-        static ShaderTagId OutlinesShaderTagID = new ShaderTagId(OUTLINE_SHADER_TAG);
+        static ShaderTagId ProPixelizerShaderTagID = new ShaderTagId(PROPIXELIZER_SHADER_TAG);
 
-        Material OutlineDetectionMaterial;
         private const string OutlineDetectionShader = "Hidden/ProPixelizer/SRP/OutlineDetection";
 
         private Vector4 TexelSize;
-        public const string OUTLINE_OBJECT_BUFFER = "_ProPixelizerObjectBuffer";
+        public const string PROPIXELIZER_OBJECT_BUFFER = "_ProPixelizerMetadata";
         public const string OUTLINE_BUFFER = "_ProPixelizerOutlines";
-        private const string OUTLINE_SHADER_TAG = "Outlines";
+        private const string PROPIXELIZER_SHADER_TAG = "ProPixelizer";
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
@@ -47,13 +88,10 @@ namespace ProPixelizer
             outlineDescriptor.useMipMap = false;
             outlineDescriptor.colorFormat = RenderTextureFormat.ARGB32;
             outlineDescriptor.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
-            _OutlineObjectBuffer = Shader.PropertyToID(OUTLINE_OBJECT_BUFFER);
+            _OutlineObjectBuffer = Shader.PropertyToID(PROPIXELIZER_OBJECT_BUFFER);
             _OutlineBuffer = Shader.PropertyToID(OUTLINE_BUFFER);
             cmd.GetTemporaryRT(_OutlineObjectBuffer, outlineDescriptor, FilterMode.Point);
             cmd.GetTemporaryRT(_OutlineBuffer, outlineDescriptor, FilterMode.Point);
-
-            if (OutlineDetectionMaterial == null)
-                OutlineDetectionMaterial = GetMaterial(OutlineDetectionShader);
 
             TexelSize = new Vector4(
                 1f / cameraTextureDescriptor.width,
@@ -74,16 +112,16 @@ namespace ProPixelizer
         {
             if (DepthTestOutlines)
             {
-                OutlineDetectionMaterial.EnableKeyword("DEPTH_TEST_OUTLINES_ON");
-                OutlineDetectionMaterial.SetFloat("_OutlineDepthTestThreshold", DepthTestThreshold);
+                Materials.OutlineDetection.EnableKeyword("DEPTH_TEST_OUTLINES_ON");
+                Materials.OutlineDetection.SetFloat("_OutlineDepthTestThreshold", DepthTestThreshold);
             }
             else
-                OutlineDetectionMaterial.DisableKeyword("DEPTH_TEST_OUTLINES_ON");
+                Materials.OutlineDetection.DisableKeyword("DEPTH_TEST_OUTLINES_ON");
 
             if (UseNormalsForEdgeDetection)
             {
                 //OutlineDetectionMaterial.EnableKeyword("NORMAL_EDGE_DETECTION_ON");
-                OutlineDetectionMaterial.SetFloat("_NormalEdgeDetectionSensitivity", NormalEdgeDetectionSensitivity);
+                Materials.OutlineDetection.SetFloat("_NormalEdgeDetectionSensitivity", NormalEdgeDetectionSensitivity);
             }
             //else
             //    OutlineDetectionMaterial.DisableKeyword("NORMAL_EDGE_DETECTION_ON");
@@ -113,7 +151,7 @@ namespace ProPixelizer
             CommandBufferPool.Release(buffer);
 
             var sort = new SortingSettings(renderingData.cameraData.camera);
-            var drawingSettings = new DrawingSettings(OutlinesShaderTagID, sort);
+            var drawingSettings = new DrawingSettings(ProPixelizerShaderTagID, sort);
             var filteringSettings = new FilteringSettings(RenderQueueRange.all);
             context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings);
 
@@ -123,7 +161,7 @@ namespace ProPixelizer
             buffer.SetGlobalTexture("_MainTex", _OutlineObjectBuffer);
             buffer.SetGlobalTexture("_MainTex_Depth", _OutlineObjectBuffer, RenderTextureSubElement.Depth);
             buffer.SetGlobalVector("_TexelSize", TexelSize);
-            Blit(buffer, _OutlineObjectBuffer, _OutlineBuffer, OutlineDetectionMaterial);
+            Blit(buffer, _OutlineObjectBuffer, _OutlineBuffer, Materials.OutlineDetection);
             buffer.SetGlobalTexture(OUTLINE_BUFFER, _OutlineBuffer);
             context.ExecuteCommandBuffer(buffer);
             CommandBufferPool.Release(buffer);
