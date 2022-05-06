@@ -40,44 +40,62 @@ public class PlayerMovement : MonoBehaviour
     [Space]
     [Space]
     [SerializeField]
+    [Range(1f, 50f)]
+    private float HorizontalMaxSpeed = 20f;
+    [SerializeField]
+    [Range(1f, 200f)]
+    private float HorizontalAcceleration = 200f;
+    [SerializeField]
+    [Range(1f, 200f)]
+    private float HorizontalMaxAccelerationForce = 150f;
+    [SerializeField]
+    private Vector3 HorizontalForceScale = new Vector3(1f, 0, 1f);
+    [SerializeField]
+    [Range(1f, 30f)]
+    private float VerticalMaxSpeed = 12f;
+    [SerializeField]
+    [Range(1f, 200f)]
+    private float VerticalAcceleration = 200f;
+    [SerializeField]
+    [Range(1f, 200f)]
+    private float VerticalMaxAccelerationForce = 150f;
+    [SerializeField]
+    private Vector3 VerticalForceScale = Vector3.up;
+    [SerializeField]
+    [Range(0f, 2f)]
+    private float SpeedFactor = 1f;
+    [SerializeField]
+    [Range(0f, 2f)]
+    private float MaxAccelForceFactor = 1f;
+    [SerializeField]
+    private AnimationCurve AccelerationFactorFromDot;
+    [SerializeField]
+    private AnimationCurve MaxAccelerationForceFactorFromDot;
+    private Vector3 _horizontalUnitGoal;
+    private Vector3 _horizontalGoalVel;
+    private Vector3 _verticalUnitGoal;
+    private Vector3 _verticalGoalVel;
+
+    [Header("Elevation Settings")]
+    [Space]
+    [Space]
+    [Space]
+    [SerializeField]
     [Range(4f, 10f)]
     private float MinVerticalElevation = 4f;
     [SerializeField]
     [Range(11f, 30f)]
     private float MaxVerticalElevation = 20f;
     [SerializeField]
-    private float ElevationBoundsPrecisionCoefficient = 0.001f;
-    [SerializeField]
-    ForceMode _ForceMode;
-    [SerializeField]
     [Range(0f, 500f)]
     private float MaxElevationSpringForce = 100f;
     [SerializeField]
-    [Range(0.01f, 500f)]
-    private float ElevationSpringStrength = 100f;
-    [SerializeField]
-    [Range(0.01f, 500f)]
-    private float ElevationBoundsSpringStrength = 100f;
-    [SerializeField]
     [Range(0f, 200f)]
     private float ElevationSpringDamper = 0.2f;
+    [Space]
     [SerializeField]
     private LayerMask GroundLayers;
     [Space]
-    [SerializeField]
-    private float HorizontalMaxSpeed = 10f;
-    [SerializeField]
-    private float HorizontalBoostMaxSpeed = 14f;
-    [SerializeField]
-    private float HorizontalAcceleration = 4f;
-    [Space]
-    [SerializeField]
-    private float VerticalMaxSpeed = 10f;
-    [SerializeField]
-    private float VerticalBoostMaxSpeed = 14f;
-    [SerializeField]
-    private float VerticalAcceleration = 4f;
-    private float _targetElevation;
 
     // cached elevation properties
     private float _cachedTime;
@@ -99,12 +117,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
     private bool _cachedGroundIsHit = false;
-
-    [Space]
-    [SerializeField]
-    [Range(0.01f, 1f)]
-    private float VelocitySlowRate = 0.9f;
-    private float SpeedAccelerationOffset = 0.001f;
 
     [Header("Animation Body Settings")]
     [Space]
@@ -137,7 +149,6 @@ public class PlayerMovement : MonoBehaviour
     {
         _cameraOffset = _mainCameraPivot.transform.position - transform.position;
         if (_mainCamera == null) _mainCamera = _mainCameraPivot.GetComponentInChildren<Camera>();
-        _targetElevation = GetGroundDistance();
     }
 
     private void FixedUpdate()
@@ -151,191 +162,82 @@ public class PlayerMovement : MonoBehaviour
         UpdateCameraSize();
     }
 
-    private void MoveHorizontal()
-    {
-        // capture relevant input axis
-        Vector3 _horizontalInput = new Vector3(_input.horizontalMove.x, 0f, _input.horizontalMove.y);
-
-        // capture current speed
-        float _currentHorizontalSpeed = GetCurrentHorizontalSpeed();
-
-        // calculated speed is relative to our current speed
-        float speed = _currentHorizontalSpeed;
-
-        // determine the target speed
-        float _targetSpeed = GetTargetHorizontalSpeed();
-
-        // +/- speed if necessary
-        if (_currentHorizontalSpeed < _targetSpeed - SpeedAccelerationOffset || _currentHorizontalSpeed > _targetSpeed + SpeedAccelerationOffset)
-        {
-            // use appropriate magnitude
-            float _inputMagnitude = IsCurrentDeviceMouse ? 1f : _horizontalInput.magnitude;
-
-            // interpolate towards the target speed
-            speed = Mathf.Lerp(speed, _targetSpeed * _inputMagnitude, Time.deltaTime * HorizontalAcceleration);
-
-            // round 3 places
-            speed = Mathf.Round(speed * 1000f) / 1000f;
-        }
-
-        // point the input vector in the direction the camera is facing
-        Vector3 _cameraDirectedInput = _mainCameraPivot.TransformDirection(_horizontalInput.normalized);
-
-        // angle the input and apply the calculated speed
-        Vector3 _horizontalMovement = AngleLeft() * _cameraDirectedInput * speed;
-
-        // when horizontal input is idle return horizontal velocity to rest
-        if (_horizontalInput == Vector3.zero)
-        {
-            // slow the velocity
-            _horizontalMovement = _rb.velocity * VelocitySlowRate;
-
-            // apply rest when reaching the lower limit
-            if (Mathf.Abs(_rb.velocity.x) <= ApproximationPrecision) _horizontalMovement = new Vector3(0f, _horizontalMovement.y, _horizontalMovement.z);
-            if (Mathf.Abs(_rb.velocity.z) <= ApproximationPrecision) _horizontalMovement = new Vector3(_horizontalMovement.x, _horizontalMovement.y, 0f);
-        }
-
-        // apply the calculated horizontal velocity
-        _rb.velocity = new Vector3(_horizontalMovement.x, _rb.velocity.y, _horizontalMovement.z);
-    }
-
     private void MoveHorizontalWithForce()
     {
         // capture relevant input axis
-        Vector3 _horizontalInput = new Vector3(_input.horizontalMove.x, 0f, _input.horizontalMove.y);
-        Vector3 _cameraDirectedInput = AngleLeft() * _mainCameraPivot.TransformDirection(_horizontalInput.normalized);
-        float inputMagnitude = IsCurrentDeviceMouse ? 1f : _horizontalInput.magnitude;
+        Vector3 move = new Vector3(_input.horizontalMove.x, 0f, _input.horizontalMove.y);
+        float inputMagnitude = IsCurrentDeviceMouse ? 1f : move.magnitude;
 
-        if (_horizontalInput == Vector3.zero) _rb.velocity = _rb.velocity * 0.9f;
-        // if ( (_horizontalInput.x > 0 && _rb.velocity.x < 0) ||  (_horizontalInput.x < 0 && _rb.velocity.x > 0)) {
-        //     _rb.velocity = _rb.velocity * 0.9f;
-        // } else if ( (_horizontalInput.z > 0 && _rb.velocity.z < 0) ||  (_horizontalInput.z < 0 && _rb.velocity.z > 0)) {
-        //     _rb.velocity = _rb.velocity * 0.9f;
-        // }
-        float _maxSpeed = (_input.boost ? HorizontalBoostMaxSpeed : HorizontalMaxSpeed);
+        // normalize if necessary
+        if (move.magnitude > 0)
+        {
+            move.Normalize();
+        }
 
-        _rb.AddForce(_cameraDirectedInput * inputMagnitude * _maxSpeed, _ForceMode);
+        _horizontalUnitGoal = AngleLeft() * _mainCameraPivot.TransformDirection(move) * inputMagnitude;
 
-        _maxSpeed= 14f;
-        _rb.velocity = new Vector3(Mathf.Clamp(_rb.velocity.x, -_maxSpeed, _maxSpeed), _rb.velocity.y, _rb.velocity.z);
-        _rb.velocity = new Vector3(_rb.velocity.x, _rb.velocity.y, Mathf.Clamp(_rb.velocity.z, -_maxSpeed, _maxSpeed));
+        Vector3 unitVel = _horizontalGoalVel.normalized;
+
+        // groundVel is just going to be zero for now
+        Vector3 groundVel = Vector3.zero;
+
+        float velDot = Vector3.Dot(_horizontalUnitGoal, unitVel);
+
+        float accel = HorizontalAcceleration * AccelerationFactorFromDot.Evaluate(velDot);
+
+        Vector3 goalVel = _horizontalUnitGoal * HorizontalMaxSpeed * SpeedFactor;
+
+        _horizontalGoalVel = Vector3.MoveTowards(_horizontalGoalVel, goalVel + groundVel, accel * Time.deltaTime);
+
+        Vector3 neededAccel = (_horizontalGoalVel - _rb.velocity) / Time.deltaTime;
+
+        float maxAccel = HorizontalMaxAccelerationForce * MaxAccelerationForceFactorFromDot.Evaluate(velDot) * MaxAccelForceFactor;
+
+        neededAccel = Vector3.ClampMagnitude(neededAccel, maxAccel);
+
+        _rb.AddForce(Vector3.Scale(neededAccel * _rb.mass, HorizontalForceScale));
     }
-
-    private void MoveVertical()
-    {
-        // capture relevant input axis
-        Vector3 _verticalInput = new Vector3(0f, _input.verticalMove.y, 0f);
-
-        // value of 1 means velocity slow is left as-is
-        float _boundsSlow = 1f;
-
-        // player is moving out of bounds
-        if ((!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 2f) && HasUpwardVerticalInput()))
-        {
-            // restrict movement input
-            _verticalInput = Vector3.zero;
-        }
-
-        // player is moving out of bounds
-        if ((!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 2f) && HasDownwardVerticalInput()))
-        {
-            // restrict movement input
-            _verticalInput = Vector3.zero;
-        }
-
-        // capture current speed
-        float _currentVerticalSpeed = GetCurrentVerticalSpeed();
-
-        // calculated speed is relative to our current speed
-        float speed = _currentVerticalSpeed;
-
-        // determine the target speed
-        float _targetSpeed = GetTargetVerticalSpeed();
-
-        // +/- speed if necessary
-        if (_currentVerticalSpeed < _targetSpeed - SpeedAccelerationOffset || _currentVerticalSpeed > _targetSpeed + SpeedAccelerationOffset)
-        {
-            // use appropriate magnitude
-            float _inputMagnitude = IsCurrentDeviceMouse ? 1f : _verticalInput.magnitude;
-
-            // interpolate towards the target speed
-            speed = Mathf.Lerp(speed, _targetSpeed * _inputMagnitude, Time.deltaTime * VerticalAcceleration);
-
-            // round 3 places
-            speed = Mathf.Round(speed * 1000f) / 1000f;
-        }
-
-        // normalize the vertical input and apply the calculated speed
-        Vector3 _verticalMovement = _verticalInput.normalized * speed;
-
-        // when vertical input is idle return vertical velocity to rest
-        if (_verticalInput == Vector3.zero)
-        {
-            // slow the velocity
-            _verticalMovement = _rb.velocity * VelocitySlowRate * _boundsSlow;
-
-            // apply rest when reaching the lower limit
-            if (Mathf.Abs(_rb.velocity.y) <= ApproximationPrecision) _verticalMovement = new Vector3(_verticalMovement.x, 0f, _verticalMovement.z);
-        }
-
-        // apply the calculated vertical velocity
-        _rb.velocity = new Vector3(_rb.velocity.x, _verticalMovement.y, _rb.velocity.z);
-    }
-
 
     private void MoveVerticalWithForce()
     {
-        // capture relevant input axis
-        Vector3 _verticalInput = new Vector3(0f, _input.verticalMove.y, 0f);
+        Vector3 move = new Vector3(0f, _input.verticalMove.y, 0f);
+        float inputMagnitude = IsCurrentDeviceMouse ? 1f : move.magnitude;
 
-        // player is moving out of bounds
-        if ((!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient) && HasUpwardVerticalInput()))
+        // normalize if necessary
+        if (move.magnitude > 0)
         {
-            // restrict movement input
-            _verticalInput = Vector3.zero;
+            move.Normalize();
         }
 
-        // player is moving out of bounds
-        if ((!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient) && HasDownwardVerticalInput()))
-        {
-            // restrict movement input
-            _verticalInput = Vector3.zero;
-        }
+        _verticalUnitGoal = move * inputMagnitude;
 
-        float _maxSpeed = (_input.boost ? VerticalBoostMaxSpeed : VerticalMaxSpeed);
-        Vector3 direction = _verticalInput.y > 0f ? Vector3.up : (_verticalInput.y < 0f ? Vector3.down : Vector3.zero);
+        Vector3 unitVel = _verticalGoalVel.normalized;
 
-        float inputMagnitude = IsCurrentDeviceMouse ? 1f : _verticalInput.magnitude;
+        // groundVel is just going to be zero for now
+        Vector3 groundVel = Vector3.zero;
 
-        if (_verticalInput == Vector3.zero) _rb.velocity = _rb.velocity * 0.9f;
-        if ((HasDownwardVerticalInput() && _rb.velocity.y > 0) || (HasUpwardVerticalInput() && _rb.velocity.y < 0))
-        {
-            _rb.velocity = _rb.velocity * 0.9f;
-        }
+        float velDot = Vector3.Dot(_verticalUnitGoal, unitVel);
 
-        _rb.AddForce(_verticalInput.normalized * inputMagnitude * _maxSpeed, _ForceMode);
-        if (Mathf.Abs(_rb.velocity.y - _maxSpeed) > ApproximationPrecision) _rb.velocity = new Vector3(_rb.velocity.x, Mathf.Clamp(_rb.velocity.y, -_maxSpeed, _maxSpeed), _rb.velocity.z);
+        float accel = VerticalAcceleration * AccelerationFactorFromDot.Evaluate(velDot);
+
+        Vector3 goalVel = _verticalUnitGoal * VerticalMaxSpeed * SpeedFactor;
+
+        _verticalGoalVel = Vector3.MoveTowards(_verticalGoalVel, goalVel + groundVel, accel * Time.deltaTime);
+
+        Vector3 neededAccel = (_verticalGoalVel - _rb.velocity) / Time.deltaTime;
+
+        float maxAccel = VerticalMaxAccelerationForce * MaxAccelerationForceFactorFromDot.Evaluate(velDot) * MaxAccelForceFactor;
+
+        neededAccel = Vector3.ClampMagnitude(neededAccel, maxAccel);
+
+        _rb.AddForce(Vector3.Scale(neededAccel * _rb.mass, Vector3.up));
     }
-
     private void ClampVerticalMovement()
     {
-        // if (!WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MinVerticalElevation, ElevationBoundsSpringStrength);
-        // else if (!WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient * 0.5f)) MoveToElevation(MaxVerticalElevation, ElevationBoundsSpringStrength);
-
-        // Project where our velocity will take us by the end of the frame.
         Vector3 positionAtEndOfStep = _rb.position + _rb.velocity * Time.deltaTime;
-
-        // Limit that projected position to within our allowed bounds.
         positionAtEndOfStep.y = Mathf.Clamp(positionAtEndOfStep.y, MinVerticalElevation, MaxVerticalElevation);
-
-        // Compute a velocity that will take us to this clamped position instead.
         Vector3 neededVelocity = (positionAtEndOfStep - _rb.position) / Time.deltaTime;
-
-        // You can also calculate this as the needed velocity change/acceleration,
-        // and add it as a force instead if you prefer.
         _rb.velocity = neededVelocity;
-
-        // else MoveToElevation(_targetElevation, ElevationSpringStrength);
     }
 
     private void MoveToElevation(float targetElevation, float power)
@@ -432,20 +334,6 @@ public class PlayerMovement : MonoBehaviour
         _cachedGroundHit = _groundHit;
     }
 
-    private bool WithinMinimumVerticalBound(float precision)
-    {
-        return (GetGroundDistance() > (MinVerticalElevation + precision));
-    }
-    private bool WithinMaximumVerticalBound(float precision)
-    {
-        return (GetGroundDistance() < (MaxVerticalElevation - precision));
-    }
-
-    private bool WithinVerticalBounds(float precision)
-    {
-        return WithinMinimumVerticalBound(ElevationBoundsPrecisionCoefficient) && WithinMaximumVerticalBound(ElevationBoundsPrecisionCoefficient);
-    }
-
     private float GetGroundDistance()
     {
         return _groundIsHit ? _currentGroundHit.distance : transform.position.y;
@@ -454,36 +342,6 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 GroundDirection()
     {
         return -transform.up;
-    }
-
-    private bool HasDownwardVerticalInput()
-    {
-        return _input.verticalMove.y < 0f;
-    }
-
-    private bool HasUpwardVerticalInput()
-    {
-        return _input.verticalMove.y > 0f;
-    }
-
-    private float GetCurrentHorizontalSpeed()
-    {
-        return new Vector3(_rb.velocity.x, 0f, _rb.velocity.z).magnitude;
-    }
-
-    private float GetCurrentVerticalSpeed()
-    {
-        return new Vector3(0f, _rb.velocity.y, 0f).magnitude;
-    }
-
-    private float GetTargetHorizontalSpeed()
-    {
-        return (_input.horizontalMove != Vector3.zero) ? (_input.boost ? HorizontalBoostMaxSpeed : HorizontalMaxSpeed) : 0f;
-    }
-
-    private float GetTargetVerticalSpeed()
-    {
-        return (Mathf.Abs(_input.verticalMove.y) > ApproximationPrecision) ? (_input.boost ? VerticalBoostMaxSpeed : VerticalMaxSpeed) : 0f;
     }
 
     private Quaternion AngleLeft()

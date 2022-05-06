@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 4889230257051033611}
   - component: {fileID: 350280683054524966}
   - component: {fileID: 6682695984819552612}
-  - component: {fileID: 1923340202563808915}
   m_Layer: 8
   m_Name: plant-salad
   m_TagString: Untagged
@@ -130,19 +129,3 @@ MonoBehaviour:
   angleResolution: 30
   UseRootPixelGrid: 0
   PixelGridMaterialIndices: 
---- !u!114 &1923340202563808915
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3001254558857892059}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}

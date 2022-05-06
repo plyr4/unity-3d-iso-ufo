@@ -8,7 +8,7 @@ public class ObjectRenderSnapable : AbstractRenderSnapable
     /// Should angles be snapped
     /// </summary>
     [Tooltip("Should angles be snapped?")]
-    public bool shouldSnapAngles = true;
+    public bool shouldSnapAngles = false;
 
     public override bool ShouldSnapAngles
     { get { return shouldSnapAngles; } }

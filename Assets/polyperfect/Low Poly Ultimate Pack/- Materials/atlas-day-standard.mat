@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: atlas-night-LPUP
+  m_Name: atlas-day-standard
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_ShaderKeywords: _EMISSION _METALLICSPECGLOSSMAP _SPECULAR_SETUP
   m_LightmapFlags: 2
@@ -41,7 +41,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
-        m_Texture: {fileID: 2800000, guid: a5967f9318502e74ab2ebcc45dba1f6a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 79d6390892d8a494dbe4e12301c0b3c8, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:

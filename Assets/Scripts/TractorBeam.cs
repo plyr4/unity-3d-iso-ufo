@@ -517,6 +517,7 @@ public class TractorBeam : MonoBehaviour
         public void Retract()
         {
             _retract = true;
+            _rb.mass = 0f;
         }
 
         public void Untether()

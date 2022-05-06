@@ -8,6 +8,8 @@ public class GameConstants : MonoBehaviour
 
     [SerializeField]
     public BeamAttributes _beamAttributes;
+    [SerializeField]
+    public ObjectSaver _objectSaver;
 
     private void Awake()
     {
@@ -17,6 +19,7 @@ public class GameConstants : MonoBehaviour
             return;
         }
         InitBeamAttributes();
+        InitObjectSaver();
         _instance = this;
     }
 
@@ -33,5 +36,10 @@ public class GameConstants : MonoBehaviour
 
         // apply a default in the case that nothing was provided
         if (_beamAttributes == null) _beamAttributes = gameObject.AddComponent<BeamAttributes>().InitializeDefaults();
+    }
+    private void InitObjectSaver()
+    {
+        // attempt to use the present component
+        if (_objectSaver == null) _objectSaver = gameObject.GetComponent<ObjectSaver>();
     }
 }

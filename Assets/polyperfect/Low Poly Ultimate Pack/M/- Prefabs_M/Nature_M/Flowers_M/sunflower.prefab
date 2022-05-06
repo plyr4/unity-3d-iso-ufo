@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 3396478}
   - component: {fileID: 2391506}
   - component: {fileID: 9009196147552024560}
-  - component: {fileID: 3344452162302077562}
   - component: {fileID: 7695720236109365814}
   - component: {fileID: 1718977977}
   m_Layer: 8
@@ -101,22 +100,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3344452162302077562
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 179610}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}
 --- !u!114 &7695720236109365814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -129,7 +112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  shouldSnapAngles: 0
   angleResolution: 30
   UseRootPixelGrid: 0
   PixelGridMaterialIndices: 
