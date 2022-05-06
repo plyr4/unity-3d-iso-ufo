@@ -40,7 +40,7 @@ public class PixelizedWithOutlineShaderGUI : ShaderGUI
         DrawAppearanceGroup(materialEditor, properties);
         DrawLightingGroup(materialEditor, properties);
         DrawPixelizeGroup(materialEditor, properties);
-        DrawAlphaGroup(materialEditor, properties);
+        //DrawAlphaGroup(materialEditor, properties);
         DrawOutlineGroup(materialEditor, properties);
 
         EditorGUILayout.Space();

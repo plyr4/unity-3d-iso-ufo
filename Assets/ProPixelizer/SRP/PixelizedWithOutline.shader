@@ -28,8 +28,7 @@ Shader "ProPixelizer/SRP/PixelizedWithOutline"
 		_NormalMap("Normal Map", 2D) = "bump" {}
 		_Emission("Emission", 2D) = "white" {}
 		_EmissionColor("EmissionColor", Color) = (1, 1, 1, 0)
-		_AlphaClipThreshold("Alpha Clip Threshold", Float) = 0.5
-		[Toggle]USE_ALPHA("UseAlphaClip", Float) = 0
+		//_AlphaClipThreshold("Alpha Clip Threshold", Float) = 0.5
 		[IntRange] _ID("ID", Range(0, 255)) = 1 // A unique ID used to differentiate objects for purposes of outlines.
 		_OutlineColor("OutlineColor", Color) = (0.0, 0.0, 0.0, 0.5)
 		_EdgeHighlightColor("Edge Highlight Color", Color) = (0.5, 0.5, 0.5, 0)
