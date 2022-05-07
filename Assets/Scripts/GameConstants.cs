@@ -18,6 +18,7 @@ public class GameConstants : MonoBehaviour
             Destroy(this);
             return;
         }
+
         InitBeamAttributes();
         InitObjectSaver();
         _instance = this;

@@ -31,6 +31,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -54,6 +55,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -92,9 +94,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012396999754}
   serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_Mass: 0.5
+  m_Drag: 1
+  m_AngularDrag: 2
   m_UseGravity: 1
   m_IsKinematic: 1
   m_Interpolate: 0
@@ -112,10 +114,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 0
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.275
+  lastSnapped: {x: 0, y: 0, z: 0}
+  sleep: 1
 --- !u!65 &8903208690228220539
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -123,7 +130,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012396999754}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: e52fb17f9b1e7fd48b8955f1391d3688, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2

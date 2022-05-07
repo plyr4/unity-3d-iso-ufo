@@ -2,12 +2,26 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using VLB;
-
+using TMPro;
 public class TractorBeam : MonoBehaviour
 {
     [Header("Input Settings")]
     [SerializeField]
     private PlayerInputs _input;
+    [Header("3D UI")]
+    [Space]
+    [Space]
+    [Space]
+    [SerializeField]
+    private TextMeshPro _lastBeamedObjectName;
+    [SerializeField]
+    private GameObject _lastBeamedObjectMeshParent;
+    [SerializeField]
+    private float LastBeamUpdateCooldown = 1f;
+    private float _lastBeamUpdateCooldown;
+    [SerializeField]
+    private GameObject _nextLastBeamedObject;
+    private GameObject _lastBeamedObject;
 
     [Header("Beam Settings")]
     [Space]
@@ -120,6 +134,10 @@ public class TractorBeam : MonoBehaviour
 
         // initialize beamables and beam properties
         InitializeBeam();
+
+        _lastBeamUpdateCooldown = LastBeamUpdateCooldown;
+        // Physics.sleepThreshold = 10;
+        // Physics.defaultMaxAngularSpeed = 1f;
     }
 
     private void InitializeBeam()
@@ -136,8 +154,75 @@ public class TractorBeam : MonoBehaviour
 
     private void Update()
     {
+        UpdateLastBeamed();
         UpdateBeamStrength();
         UpdateBeamables();
+    }
+    string TrimName(string name)
+    {
+        int index = name.IndexOf(" ");
+        if (index >= 0) name = name.Substring(0, index);
+        name = name.Replace('-', ' ');
+        return name;
+    }
+    private void UpdateLastBeamed()
+    {
+        _lastBeamUpdateCooldown -= Time.deltaTime;
+        if (_nextLastBeamedObject == null) return;
+        if (_nextLastBeamedObject == _lastBeamedObject) return;
+        if (_nextLastBeamedObject != null && _lastBeamedObject != null && (TrimName(_nextLastBeamedObject.name) == TrimName(_lastBeamedObject.name))) return;
+        if (_lastBeamUpdateCooldown > 0f) {
+            _nextLastBeamedObject = null;
+            return;
+        }
+        _lastBeamUpdateCooldown = LastBeamUpdateCooldown;
+        // if (_nextLastBeamedObject == null && _lastBeamedObject == null) return;
+        // Debug.Log("UpdateLastBeamed");
+        // if (_nextLastBeamedObject != null) Debug.Log("_nextLastBeamedObject " + _nextLastBeamedObject.GetInstanceID(), _nextLastBeamedObject);
+        // if (_lastBeamedObject != null) Debug.Log("_lastBeamedObject "+ _lastBeamedObject.GetInstanceID(), _lastBeamedObject);
+        // if ((_nextLastBeamedObject != null && _lastBeamedObject != null) && _lastBeamedObject.GetInstanceID() == _nextLastBeamedObject.GetInstanceID()) return;
+        // Debug.Log(_lastBeamedObject.GetInstanceID());
+        // Debug.Log(_nextLastBeamedObject.GetInstanceID());
+
+
+        foreach (Transform child in _lastBeamedObjectMeshParent.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        GameObject newInstance = Instantiate(_nextLastBeamedObject) as GameObject;
+        Rigidbody rb = newInstance.GetComponent<Rigidbody>();
+        // rb.isKinematic = true;
+        rb.velocity = Vector3.zero;
+        rb.constraints = RigidbodyConstraints.FreezePosition;
+        rb.AddTorque(RandomSpin.GetRandomSpin() * rb.mass * 20f);
+
+        newInstance.transform.SetParent(_lastBeamedObjectMeshParent.transform, false);
+
+        newInstance.layer = 5;
+        Destroy(newInstance.GetComponent<ConfigurableJoint>());
+        Destroy(newInstance.GetComponent<LineRenderer>());
+
+
+
+
+        newInstance.transform.localPosition = Vector3.zero - MeshFilters.GetAnchorPivotPosition(newInstance.GetComponent<MeshFilter>());
+
+        // newInstance.GetComponent<MeshFilter>().mesh.bounds.Encapsulate(newInstance.transform.position);
+        newInstance.transform.localEulerAngles = Vector3.zero;
+        newInstance.transform.localScale = Vector3.one;
+        MeshFilters.ScaleObjectToMeshBounds(newInstance.GetComponent<MeshFilter>());
+
+        newInstance.gameObject.SetActive(true);
+
+        var t = TrimName(_nextLastBeamedObject.name);
+
+        // string after space
+
+        _lastBeamedObjectName.text = t;
+        // _lastBeamedObject = _nextLastBeamedObject;
+        _lastBeamedObject = _nextLastBeamedObject;
+        _nextLastBeamedObject = null;
     }
 
     private void FixedUpdate()
@@ -159,7 +244,8 @@ public class TractorBeam : MonoBehaviour
 
     }
     private void DrawTetherJoints()
-    {   if (_tetheredBeamables == null) return;
+    {
+        if (_tetheredBeamables == null) return;
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
             // joint.anchor
@@ -266,11 +352,13 @@ public class TractorBeam : MonoBehaviour
             }
         }
     }
-
+    private bool _setNext = false;
     public void Tether(GameObject obj)
     {
         // destroy an existing tether
         Beamable beamable = new Beamable(obj, this);
+
+        _nextLastBeamedObject = obj;
 
         // add beamable to tethered dictionary
         AddGrabbedBeamable(beamable);
@@ -305,14 +393,15 @@ public class TractorBeam : MonoBehaviour
         // pull up any objects in the beam
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.Retract();
     }
-    private bool IsHoldingUnretractedBeamables () {
-        Beamable _tetherBeamable = _tetheredBeamables.Values.FirstOrDefault(_b=>!_b._retract);
+    private bool IsHoldingUnretractedBeamables()
+    {
+        Beamable _tetherBeamable = _tetheredBeamables.Values.FirstOrDefault(_b => !_b._retract);
         return _tetherBeamable != null;
     }
     private void UpdateBeamables()
     {
         // draw or clear the beam line
-        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables () && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
+        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
         else TetherJoints.ClearJointLine(_line);
 
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.HandleUpdate(this);
@@ -484,6 +573,15 @@ public class TractorBeam : MonoBehaviour
             _rb.isKinematic = false;
 
             _originalMass = _rb.mass;
+            // ObjectRenderSnapable snap = _gameObject.GetComponent<ObjectRenderSnapable>();
+            // if (snap != null)
+            // {
+            //     snap.sleep = false;
+            //     snap.SnapEulerAngles = false;
+            //     // snap.angleResolution = 15f;
+            // }
+
+
 
             _rb.AddTorque(RandomSpin.GetRandomSpin() * 10f);
         }
@@ -496,7 +594,7 @@ public class TractorBeam : MonoBehaviour
         }
 
 
-        public void HandleFixedUpdate( TractorBeam beam)
+        public void HandleFixedUpdate(TractorBeam beam)
         {
             if (_joint == null) return;
             if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_joint, _retract);

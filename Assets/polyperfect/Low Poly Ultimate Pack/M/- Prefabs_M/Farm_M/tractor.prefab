@@ -26,6 +26,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4594797488160902}
   - {fileID: 4555831397416986}
@@ -49,7 +50,6 @@ GameObject:
   - component: {fileID: 64228474436202696}
   - component: {fileID: 1641522750257688023}
   - component: {fileID: 2264835187727105}
-  - component: {fileID: 8676637154825450235}
   m_Layer: 8
   m_Name: tractor-wheel_BL
   m_TagString: Untagged
@@ -67,6 +67,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.627, y: 0.668, z: -1.006}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4743926529891218}
   m_RootOrder: 2
@@ -90,6 +91,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -146,10 +148,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &2264835187727105
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -166,22 +172,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &8676637154825450235
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1426731882258894}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}
 --- !u!1 &1560634377111066
 GameObject:
   m_ObjectHideFlags: 0
@@ -196,7 +186,6 @@ GameObject:
   - component: {fileID: 64191366228097670}
   - component: {fileID: 7803962009767365650}
   - component: {fileID: 4340433989170616425}
-  - component: {fileID: 21478550245637457}
   m_Layer: 8
   m_Name: tractor-wheel_FL
   m_TagString: Untagged
@@ -214,6 +203,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.518, y: 0.376, z: 0.993}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4743926529891218}
   m_RootOrder: 4
@@ -237,6 +227,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -293,10 +284,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &4340433989170616425
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -313,22 +308,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &21478550245637457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1560634377111066}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}
 --- !u!1 &1684640289309248
 GameObject:
   m_ObjectHideFlags: 0
@@ -343,7 +322,6 @@ GameObject:
   - component: {fileID: 64713133405857328}
   - component: {fileID: 6481786405273152643}
   - component: {fileID: 4811295456673264179}
-  - component: {fileID: 5221056851733335060}
   m_Layer: 8
   m_Name: tractor-wheel_BR
   m_TagString: Untagged
@@ -361,6 +339,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.618, y: 0.664, z: -1.005}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4743926529891218}
   m_RootOrder: 3
@@ -384,6 +363,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -440,10 +420,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &4811295456673264179
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -460,22 +444,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &5221056851733335060
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1684640289309248}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}
 --- !u!1 &1775806270454112
 GameObject:
   m_ObjectHideFlags: 0
@@ -489,7 +457,6 @@ GameObject:
   - component: {fileID: 23458005509893430}
   - component: {fileID: 3411625176518530436}
   - component: {fileID: 1724512115912705025}
-  - component: {fileID: 3807504659364137624}
   - component: {fileID: 1617123936420207442}
   m_Layer: 8
   m_Name: tractor-base
@@ -508,6 +475,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4743926529891218}
   m_RootOrder: 0
@@ -531,6 +499,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -573,10 +542,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &1724512115912705025
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -593,22 +566,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3807504659364137624
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1775806270454112}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}
 --- !u!65 &1617123936420207442
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -636,7 +593,6 @@ GameObject:
   - component: {fileID: 64578622834329618}
   - component: {fileID: 4345083207747374141}
   - component: {fileID: 7787456316882353741}
-  - component: {fileID: 3187297914593500677}
   m_Layer: 8
   m_Name: tractor-wheel_FR
   m_TagString: Untagged
@@ -654,6 +610,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.506, y: 0.373, z: 0.9964}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4743926529891218}
   m_RootOrder: 1
@@ -677,6 +634,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -733,10 +691,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &7787456316882353741
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -753,19 +715,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3187297914593500677
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1961380150597850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}

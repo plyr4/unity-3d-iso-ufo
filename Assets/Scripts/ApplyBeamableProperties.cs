@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(ObjectRenderSnapable))]
@@ -12,7 +9,7 @@ public class ApplyBeamableProperties : MonoBehaviour
         GetComponent<Rigidbody>().isKinematic = true;
         gameObject.layer = 8;
         RequireCollider();
-        GameConstants._instance._objectSaver.RemoveAndApplyBeamProperties(gameObject);
+        GameConstants.Instance()._objectSaver.RemoveAndApplyBeamProperties(gameObject);
     }
 
     void RequireCollider()

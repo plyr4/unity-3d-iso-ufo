@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 64532576498990032}
   - component: {fileID: 1062749908826075255}
   - component: {fileID: 4023470954796298483}
-  - component: {fileID: 7441964737387297627}
   m_Layer: 0
   m_Name: barrel-old
   m_TagString: Untagged
@@ -32,6 +31,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -55,6 +55,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -111,10 +112,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}
 --- !u!54 &4023470954796298483
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -131,19 +136,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &7441964737387297627
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 150946}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  RandomRotationTorque: 10
-  TrackBeamableObjectJointChanges: 1
-  isTethered: 0
-  _beam: {fileID: 0}

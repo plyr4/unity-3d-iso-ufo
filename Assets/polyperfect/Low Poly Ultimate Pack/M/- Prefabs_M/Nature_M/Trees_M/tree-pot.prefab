@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 4208831702625775449}
   - component: {fileID: -4980406212303454639}
   - component: {fileID: 3491503819961544886}
-  - component: {fileID: 4069735718869340790}
   m_Layer: 8
   m_Name: tree-pot
   m_TagString: Untagged
@@ -32,6 +31,7 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -55,6 +55,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -129,21 +130,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f2cae7a75dc1d479c03956c57c10a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shouldSnapAngles: 1
+  SnapPosition: 1
+  SnapEulerAngles: 1
+  SnapAngleStrategy: 0
   angleResolution: 30
-  UseRootPixelGrid: 0
-  PixelGridMaterialIndices: 
---- !u!114 &4069735718869340790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7397464695085624679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25fcab1a9371f244ba3276c625f46884, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grabbed: 0
-  _rb: {fileID: -4980406212303454639}
+  AlignPixelGrid: 0
+  PixelGridReference: {fileID: 0}
+  snapPrecision: 0.2
+  lastSnapped: {x: 0, y: 0, z: 0}

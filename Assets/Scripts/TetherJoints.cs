@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public static class TetherJoints
 {
     public static ConfigurableJoint CreateTether(GameObject beamableObject, TractorBeam beam)
