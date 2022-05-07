@@ -1,9 +1,11 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
 public static class FindMissingScriptsRecursively
 {
+
     [MenuItem("Auto/Remove Missing Scripts Recursively Visit Prefabs")]
     private static void FindAndRemoveMissingInSelected()
     {
@@ -61,3 +63,4 @@ public static class FindMissingScriptsRecursively
         }
     }
 }
+#endif
