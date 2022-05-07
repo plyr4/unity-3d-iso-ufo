@@ -20,7 +20,6 @@ public static class MeshFilters
         Bounds bounds = _mesh.bounds;
         var szA = Vector3.one;
         var szB = bounds.size;
-        Debug.Log(bounds.size);
         var xR = szA.x / szB.x;
         var yR = szA.y / szB.y;
         var zR = szA.z / szB.z;

@@ -176,13 +176,6 @@ public class TractorBeam : MonoBehaviour
             return;
         }
         _lastBeamUpdateCooldown = LastBeamUpdateCooldown;
-        // if (_nextLastBeamedObject == null && _lastBeamedObject == null) return;
-        // Debug.Log("UpdateLastBeamed");
-        // if (_nextLastBeamedObject != null) Debug.Log("_nextLastBeamedObject " + _nextLastBeamedObject.GetInstanceID(), _nextLastBeamedObject);
-        // if (_lastBeamedObject != null) Debug.Log("_lastBeamedObject "+ _lastBeamedObject.GetInstanceID(), _lastBeamedObject);
-        // if ((_nextLastBeamedObject != null && _lastBeamedObject != null) && _lastBeamedObject.GetInstanceID() == _nextLastBeamedObject.GetInstanceID()) return;
-        // Debug.Log(_lastBeamedObject.GetInstanceID());
-        // Debug.Log(_nextLastBeamedObject.GetInstanceID());
 
 
         foreach (Transform child in _lastBeamedObjectMeshParent.transform)
@@ -211,15 +204,13 @@ public class TractorBeam : MonoBehaviour
         // newInstance.GetComponent<MeshFilter>().mesh.bounds.Encapsulate(newInstance.transform.position);
         newInstance.transform.localEulerAngles = Vector3.zero;
         newInstance.transform.localScale = Vector3.one;
-        MeshFilters.ScaleObjectToMeshBounds(newInstance.GetComponent<MeshFilter>());
+        MeshFilter mf = newInstance.GetComponent<MeshFilter>();
+        MeshFilters.ScaleObjectToMeshBounds(mf);
 
         newInstance.gameObject.SetActive(true);
 
         var t = TrimName(_nextLastBeamedObject.name);
-
-        // string after space
-
-        _lastBeamedObjectName.text = t;
+        _lastBeamedObjectName.text = t + string.Format("\n({0}m)", Mathf.Round(mf.mesh.bounds.size.y * 10f) / 10f);
         // _lastBeamedObject = _nextLastBeamedObject;
         _lastBeamedObject = _nextLastBeamedObject;
         _nextLastBeamedObject = null;

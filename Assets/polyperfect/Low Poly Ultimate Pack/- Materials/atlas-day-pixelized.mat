@@ -24,6 +24,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: 71d6765ad72e11541bc1448c891bbcf9, type: 3}
   m_ValidKeywords:
   - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
   m_InvalidKeywords:
   - USE_EMISSION_ON
   - _EMISSION
