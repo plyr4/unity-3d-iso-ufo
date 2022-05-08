@@ -15,13 +15,15 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     private TextMeshPro _lastBeamedObjectName;
     [SerializeField]
+    private TextMeshPro _lastBeamedObjectSize;
+    [SerializeField]
     private GameObject _lastBeamedObjectMeshParent;
     [SerializeField]
-    private float LastBeamUpdateCooldown = 1f;
-    private float _lastBeamUpdateCooldown;
-    [SerializeField]
     private GameObject _nextLastBeamedObject;
+    [SerializeField]
     private GameObject _lastBeamedObject;
+    [SerializeField]
+    private GameObject _lastBeamedObjectHUD;
 
     [Header("Beam Settings")]
     [Space]
@@ -134,10 +136,6 @@ public class TractorBeam : MonoBehaviour
 
         // initialize beamables and beam properties
         InitializeBeam();
-
-        _lastBeamUpdateCooldown = LastBeamUpdateCooldown;
-        // Physics.sleepThreshold = 10;
-        // Physics.defaultMaxAngularSpeed = 1f;
     }
 
     private void InitializeBeam()
@@ -165,17 +163,13 @@ public class TractorBeam : MonoBehaviour
         name = name.Replace('-', ' ');
         return name;
     }
+
+
     private void UpdateLastBeamed()
     {
-        _lastBeamUpdateCooldown -= Time.deltaTime;
         if (_nextLastBeamedObject == null) return;
         if (_nextLastBeamedObject == _lastBeamedObject) return;
         if (_nextLastBeamedObject != null && _lastBeamedObject != null && (TrimName(_nextLastBeamedObject.name) == TrimName(_lastBeamedObject.name))) return;
-        if (_lastBeamUpdateCooldown > 0f) {
-            _nextLastBeamedObject = null;
-            return;
-        }
-        _lastBeamUpdateCooldown = LastBeamUpdateCooldown;
 
 
         foreach (Transform child in _lastBeamedObjectMeshParent.transform)
@@ -186,9 +180,15 @@ public class TractorBeam : MonoBehaviour
         GameObject newInstance = Instantiate(_nextLastBeamedObject) as GameObject;
         Rigidbody rb = newInstance.GetComponent<Rigidbody>();
         // rb.isKinematic = true;
-        rb.velocity = Vector3.zero;
+        // rb.velocity = Vector3.zero;
+        rb.angularVelocity = _nextLastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
         rb.constraints = RigidbodyConstraints.FreezePosition;
-        rb.AddTorque(RandomSpin.GetRandomSpin() * rb.mass * 20f);
+        // rb.mass = 1;
+        // rb.drag = 0;
+        // rb.angularDrag = 0;
+        MeshFilter mf = newInstance.GetComponent<MeshFilter>();
+
+        var size = Mathf.Round((Mathf.Max(mf.mesh.bounds.size.x, Mathf.Max(mf.mesh.bounds.size.y, mf.mesh.bounds.size.z))) * 10f) / 10f;
 
         newInstance.transform.SetParent(_lastBeamedObjectMeshParent.transform, false);
 
@@ -197,22 +197,27 @@ public class TractorBeam : MonoBehaviour
         Destroy(newInstance.GetComponent<LineRenderer>());
 
 
+        var centerPos = MeshFilters.GetAnchorPivotPosition(newInstance.GetComponent<MeshFilter>());
 
-
-        newInstance.transform.localPosition = Vector3.zero - MeshFilters.GetAnchorPivotPosition(newInstance.GetComponent<MeshFilter>());
 
         // newInstance.GetComponent<MeshFilter>().mesh.bounds.Encapsulate(newInstance.transform.position);
         newInstance.transform.localEulerAngles = Vector3.zero;
         newInstance.transform.localScale = Vector3.one;
-        MeshFilter mf = newInstance.GetComponent<MeshFilter>();
+
         MeshFilters.ScaleObjectToMeshBounds(mf);
+
+        newInstance.transform.localPosition = -centerPos * newInstance.transform.localScale.x;
 
         newInstance.gameObject.SetActive(true);
 
         var t = TrimName(_nextLastBeamedObject.name);
-        _lastBeamedObjectName.text = t + string.Format("\n({0}m)", Mathf.Round(mf.mesh.bounds.size.y * 10f) / 10f);
+        _lastBeamedObjectName.text = t;
+        _lastBeamedObjectSize.text = string.Format("({0}m)", size);
         // _lastBeamedObject = _nextLastBeamedObject;
         _lastBeamedObject = _nextLastBeamedObject;
+        _lastBeamedObjectHUD = newInstance;
+
+
         _nextLastBeamedObject = null;
     }
 
@@ -225,6 +230,10 @@ public class TractorBeam : MonoBehaviour
         if (!Fire()) ReleaseBeam();
         if (AltFire()) RetractBeam();
         AbsorbBeamables();
+        // if the HUD object isnt in the beamables anymore, clear it
+
+        if (_lastBeamedObjectHUD != null && _lastBeamedObject != null) _lastBeamedObjectHUD.GetComponent<Rigidbody>().angularVelocity = _lastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
+
     }
 
     private void OnDrawGizmosSelected()
@@ -399,7 +408,21 @@ public class TractorBeam : MonoBehaviour
     }
     private void FixedUpdateBeamables()
     {
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.HandleFixedUpdate(this);
+        bool hudObjectIsGrabbed = false;
+        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+        {
+            _beamable.HandleFixedUpdate(this);
+
+            if (_beamable._gameObject == _lastBeamedObject) hudObjectIsGrabbed = true;
+        }
+        if (!hudObjectIsGrabbed)
+        {
+            _lastBeamedObject = null;
+            if (_lastBeamedObjectHUD != null) Destroy(_lastBeamedObjectHUD);
+            _lastBeamedObjectHUD = null;
+            _lastBeamedObjectName.text = "";
+            _lastBeamedObjectSize.text = "";
+        }
     }
 
     private void AbsorbBeamables()
@@ -573,8 +596,8 @@ public class TractorBeam : MonoBehaviour
             // }
 
 
-
-            _rb.AddTorque(RandomSpin.GetRandomSpin() * 10f);
+            var spin = RandomSpin.GetRandomSpin() * 10f;
+            _rb.AddTorque(spin);
         }
 
         public void HandleUpdate(TractorBeam beam)

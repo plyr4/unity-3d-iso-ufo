@@ -339,6 +339,11 @@ public class PlayerMovement : MonoBehaviour
         return _groundIsHit ? _currentGroundHit.distance : transform.position.y;
     }
 
+    private float GetCurrentElevation()
+    {
+        return transform.position.y;
+    }
+
     private Vector3 GroundDirection()
     {
         return -transform.up;
@@ -387,6 +392,6 @@ public class PlayerMovement : MonoBehaviour
     private float CalculateOrthographicCameraSize()
     {
         // calculate camera size based on current elevation / max elevation
-        return CameraSizeCoefficient * GetGroundDistance() / MaxVerticalElevation;
+        return CameraSizeCoefficient * GetCurrentElevation() / MaxVerticalElevation;
     }
 }

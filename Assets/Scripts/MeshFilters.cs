@@ -61,7 +61,6 @@ public static class MeshFilters
 
 
         meshFilter.transform.localScale = scale;
-        meshFilter.transform.localPosition = Vector3.zero;
     }
 }
 
