@@ -19,6 +19,10 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     private GameObject _lastBeamedObjectMeshParent;
     [SerializeField]
+    private GameObject _lastBeamedObjectMeshCircles;
+    [SerializeField]
+    private TextMeshPro _beamStrengthUI;
+    [SerializeField]
     private GameObject _nextLastBeamedObject;
     [SerializeField]
     private GameObject _lastBeamedObject;
@@ -167,6 +171,7 @@ public class TractorBeam : MonoBehaviour
 
     private void UpdateLastBeamed()
     {
+
         if (_nextLastBeamedObject == null) return;
         if (_nextLastBeamedObject == _lastBeamedObject) return;
         if (_nextLastBeamedObject != null && _lastBeamedObject != null && (TrimName(_nextLastBeamedObject.name) == TrimName(_lastBeamedObject.name))) return;
@@ -176,7 +181,6 @@ public class TractorBeam : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-
         GameObject newInstance = Instantiate(_nextLastBeamedObject) as GameObject;
         Rigidbody rb = newInstance.GetComponent<Rigidbody>();
         // rb.isKinematic = true;
@@ -216,6 +220,7 @@ public class TractorBeam : MonoBehaviour
         // _lastBeamedObject = _nextLastBeamedObject;
         _lastBeamedObject = _nextLastBeamedObject;
         _lastBeamedObjectHUD = newInstance;
+        _lastBeamedObjectMeshCircles.SetActive(true);
 
 
         _nextLastBeamedObject = null;
@@ -296,6 +301,9 @@ public class TractorBeam : MonoBehaviour
     private void UpdateBeamStrength()
     {
         _beamStrength = Mathf.Clamp(_beamStrength += (LockBeamStrength ? 0 : (Fire() ? 1 : -1)) * BeamStrengthGrowthRate * Time.deltaTime, 0f, 1f);
+    
+        // TODO: remove this
+        _beamStrengthUI.text = string.Format("beam strength: {0}%", Mathf.FloorToInt(_beamStrength * 100));
     }
 
     private void UpdateBeamProperties()
@@ -419,6 +427,7 @@ public class TractorBeam : MonoBehaviour
         {
             _lastBeamedObject = null;
             if (_lastBeamedObjectHUD != null) Destroy(_lastBeamedObjectHUD);
+            if (_lastBeamedObjectMeshCircles != null) _lastBeamedObjectMeshCircles.SetActive(false);
             _lastBeamedObjectHUD = null;
             _lastBeamedObjectName.text = "";
             _lastBeamedObjectSize.text = "";
