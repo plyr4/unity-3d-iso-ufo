@@ -9,7 +9,7 @@ public static class TetherJoints
         if (joint == null) joint = beamableObject.AddComponent<ConfigurableJoint>();
         if (beam != null) joint.connectedBody = beam.GetTetherAnchor();
         UpdateConstantJointProperties(joint, false);
-        UpdateJointProperties(joint, beam);
+        UpdateJointProperties(joint, beam, false);
         return joint;
     }
 
@@ -27,7 +27,7 @@ public static class TetherJoints
         joint.angularXMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularXMotion;
         joint.angularYMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYMotion;
         joint.angularZMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularZMotion;
-        
+
         joint.linearLimitSpring = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.linearLimitSpring;
 
         if (!isRetracting)
@@ -78,26 +78,31 @@ public static class TetherJoints
         joint.connectedMassScale = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.connectedMassScale;
     }
 
-    public static void UpdateJointProperties(ConfigurableJoint joint, TractorBeam beam)
-    {   
+    public static void UpdateJointProperties(ConfigurableJoint joint, TractorBeam beam, bool isRetracting)
+    {
         // set the object anchor to the mesh center
         Vector3 _meshCenter = MeshFilters.GetAnchorPivotPosition(joint.gameObject.GetComponent<MeshFilter>());
         joint.anchor = _meshCenter;
 
         // set connected anchor to the beam collection depth
-        joint.connectedAnchor = -Vector3.up * beam.AnchorDepth();
+        if (!isRetracting) joint.connectedAnchor = -Vector3.up * beam.AnchorDepth();
 
         // set the mass scale to be proportional between the anchor and the object
         joint.massScale = joint.connectedBody.mass / joint.gameObject.GetComponent<Rigidbody>().mass;
         joint.connectedMassScale = 1f;
     }
-    
+
     public static void RetractJoint(ConfigurableJoint joint)
     {
-        joint.connectedAnchor = Vector3.zero;
-        var _linearLimit = new SoftJointLimit();
-        _linearLimit.limit = joint.linearLimit.limit - Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed;
-        joint.linearLimit = _linearLimit;
+        // var _linearLimit = new SoftJointLimit();
+        // _linearLimit.limit = joint.linearLimit.limit - Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed;
+        // joint.linearLimit = _linearLimit;
+        SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
+        linearLimitSpring.spring = 2f;
+        linearLimitSpring.damper = 1f;
+        joint.linearLimitSpring = linearLimitSpring;
+        joint.connectedAnchor = Vector3.Lerp(joint.connectedAnchor, Vector3.zero, Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed);
+
     }
 
     public static LineRenderer DrawBeamAnchorLine(TractorBeam beam, GameObject obj, LineRenderer line)
