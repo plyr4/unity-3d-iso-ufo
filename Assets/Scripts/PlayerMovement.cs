@@ -135,14 +135,6 @@ public class PlayerMovement : MonoBehaviour
     private float BodyRotationRate = 0.12f;
     private float _targetRotation;
     private float _rotationVelocity;
-
-    [Header("Misc Settings")]
-    [Space]
-    [Space]
-    [Space]
-    [SerializeField]
-    [Range(0.00001f, 1f)]
-    private float ApproximationPrecision = 0.00001f;
     private bool IsCurrentDeviceMouse => _playerInput.currentControlScheme == "KeyboardMouse";
 
     private void Start()

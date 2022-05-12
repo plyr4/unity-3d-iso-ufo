@@ -24,14 +24,15 @@ public class TractorBeam : MonoBehaviour
     private TextMeshPro _beamStrengthUI;
     [SerializeField]
     private TextMeshPro _beamCapacityUI;
-    [SerializeField]
-    private GameObject _nextLastBeamedObject;
+
     [SerializeField]
     private GameObject _lastBeamedObject;
     [SerializeField]
     private GameObject _lastBeamedObjectHUD;
     [SerializeField]
     private TextMeshPro _beamFullIndicator;
+    [SerializeField]
+    private Beamable _nextBeamable;
 
     [Header("Beam Settings")]
     [Space]
@@ -140,11 +141,6 @@ public class TractorBeam : MonoBehaviour
 
     private void Start()
     {
-        
-		#if !UNITY_EDITOR
-        Application.targetFrameRate = 60;
-		#endif
-
         // initialize player input used for tractor beam triggers
         InitializeInputs();
 
@@ -171,8 +167,12 @@ public class TractorBeam : MonoBehaviour
     {
         UpdateBeamStrength();
         UpdateBeamables();
+
+        // TODO: move to event system
         UpdateUI();
     }
+
+    // TODO: convert to lookup-name (or fix the names of prefabs)
     string TrimName(string name)
     {
         int index = name.IndexOf(" ");
@@ -181,19 +181,12 @@ public class TractorBeam : MonoBehaviour
         return name;
     }
 
-    private float Round10(float f)
-    {
-        return Mathf.Round(f * 10f) / 10f;
-    }
-
-
-    private float GetObjectSize(MeshFilter mf)
-    {
-        return Mathf.Max(mf.mesh.bounds.size.x, Mathf.Max(mf.mesh.bounds.size.y, mf.mesh.bounds.size.z));
-    }
-
+    // TODO: move to event system
     private void UpdateUI()
     {
+
+        // beam capacity
+        // TODO: convert this to "weight" carried
         _beamCapacityUI.text = string.Format("{0}/{1}", _tetheredBeamables.Keys.Count, MaxBeamableObjects);
         if (_tetheredBeamables.Keys.Count >= MaxBeamableObjects)
         {
@@ -203,7 +196,7 @@ public class TractorBeam : MonoBehaviour
         {
             _beamCapacityUI.color = Color.white;
         }
-        _beamStrengthUI.text = string.Format("{0}m", Round10(_beamPickupPower));
+        _beamStrengthUI.text = string.Format("{0}m", GetPickupPowerRounded());
 
 
         // if beam is full
@@ -222,65 +215,64 @@ public class TractorBeam : MonoBehaviour
             _beamFullIndicator.GetComponent<CanvasShake>().shakeStrength = 0f;
         }
 
-        UpdateLastBeamed();
+        UpdateLastBeamed(_nextBeamable);
     }
 
-    private void UpdateLastBeamed()
+    // TODO: move to event system
+    private void UpdateLastBeamed(Beamable next)
     {
+        if (next == null) return;
+        if (next._gameObject == null) return;
+        if (next._gameObject == _lastBeamedObject) return;
 
-        if (_nextLastBeamedObject == null) return;
-        if (_nextLastBeamedObject == _lastBeamedObject) return;
-        if (_nextLastBeamedObject != null && _lastBeamedObject != null && (TrimName(_nextLastBeamedObject.name) == TrimName(_lastBeamedObject.name))) return;
+
+        if (next != null && _lastBeamedObject != null && (TrimName(next._gameObject.name) == TrimName(_lastBeamedObject.name))) return;
 
 
         foreach (Transform child in _lastBeamedObjectMeshParent.transform)
         {
             Destroy(child.gameObject);
         }
-        GameObject newInstance = Instantiate(_nextLastBeamedObject) as GameObject;
-        Rigidbody rb = newInstance.GetComponent<Rigidbody>();
-        // rb.isKinematic = true;
-        // rb.velocity = Vector3.zero;
-        rb.angularVelocity = _nextLastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
+        GameObject displayedObject = Instantiate(next._gameObject) as GameObject;
+
+        Rigidbody rb = displayedObject.GetComponent<Rigidbody>();
+        rb.angularVelocity = next._rb.angularVelocity;
         rb.constraints = RigidbodyConstraints.FreezePosition;
-        // rb.mass = 1;
-        // rb.drag = 0;
-        // rb.angularDrag = 0;
-        MeshFilter mf = newInstance.GetComponent<MeshFilter>();
 
-        var size = GetObjectSize(mf);
+        displayedObject.transform.SetParent(_lastBeamedObjectMeshParent.transform, false);
 
-        newInstance.transform.SetParent(_lastBeamedObjectMeshParent.transform, false);
-
-        newInstance.layer = 5;
-        Destroy(newInstance.GetComponent<ConfigurableJoint>());
-        Destroy(newInstance.GetComponent<LineRenderer>());
+        displayedObject.layer = 5;
+        Destroy(displayedObject.GetComponent<ConfigurableJoint>());
+        Destroy(displayedObject.GetComponent<LineRenderer>());
 
 
-        var centerPos = MeshFilters.GetAnchorPivotPosition(newInstance.GetComponent<MeshFilter>());
+        var centerPos = MeshFilters.GetAnchorPivotPosition(displayedObject.GetComponent<MeshFilter>());
 
+        displayedObject.transform.localEulerAngles = Vector3.zero;
+        displayedObject.transform.localScale = Vector3.one;
 
-        // newInstance.GetComponent<MeshFilter>().mesh.bounds.Encapsulate(newInstance.transform.position);
-        newInstance.transform.localEulerAngles = Vector3.zero;
-        newInstance.transform.localScale = Vector3.one;
+        MeshFilters.ScaleObjectToMeshBounds(displayedObject);
 
-        MeshFilters.ScaleObjectToMeshBounds(mf);
+        displayedObject.transform.localPosition = -centerPos * displayedObject.transform.localScale.x;
 
-        newInstance.transform.localPosition = -centerPos * newInstance.transform.localScale.x;
+        displayedObject.gameObject.SetActive(true);
 
-        newInstance.gameObject.SetActive(true);
-
-        var t = TrimName(_nextLastBeamedObject.name);
+        var t = TrimName(displayedObject.gameObject.name);
         _lastBeamedObjectName.text = t;
-        _lastBeamedObjectSize.text = string.Format("{0}m", Round10(size));
-        // _lastBeamedObject = _nextLastBeamedObject;
-        _lastBeamedObject = _nextLastBeamedObject;
-        _lastBeamedObjectHUD = newInstance;
+        _lastBeamedObjectSize.text = string.Format("{0}m", next.Size());
+        _lastBeamedObject = next._gameObject;
+        _lastBeamedObjectHUD = displayedObject;
         _lastBeamedObjectMeshCircles.SetActive(true);
 
-
-        _nextLastBeamedObject = null;
+        _nextBeamable = null;
     }
+
+    // TODO: move to event system
+    private void FixedUpdateUI()
+    {
+        if (_lastBeamedObjectHUD != null && _lastBeamedObject != null) _lastBeamedObjectHUD.GetComponent<Rigidbody>().angularVelocity = _lastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
+    }
+
 
     private void FixedUpdate()
     {
@@ -291,11 +283,7 @@ public class TractorBeam : MonoBehaviour
         if (!Fire()) ReleaseBeam();
         if (AltFire()) RetractBeam();
         AbsorbBeamables();
-        // if the HUD object isnt in the beamables anymore, clear it
-
-        if (_lastBeamedObjectHUD != null && _lastBeamedObject != null) _lastBeamedObjectHUD.GetComponent<Rigidbody>().angularVelocity = _lastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
-
-
+        FixedUpdateUI();
     }
 
     private void OnDrawGizmosSelected()
@@ -303,8 +291,8 @@ public class TractorBeam : MonoBehaviour
         DrawBeamDepthRay();
         DrawBeamPickupSphere();
         DrawTetherJoints();
-
     }
+
     private void DrawTetherJoints()
     {
         if (_tetheredBeamables == null) return;
@@ -313,12 +301,12 @@ public class TractorBeam : MonoBehaviour
             // joint.anchor
             // should be in the center of the hanging object
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(_beamable._gameObject.transform.position + _beamable._gameObject.transform.TransformDirection(_beamable._joint.anchor), 0.2f);
+            Gizmos.DrawWireSphere(_beamable._gameObject.transform.position + _beamable._gameObject.transform.TransformDirection(_beamable._tether.anchor), 0.2f);
 
             // joint.connectedAnchor
             // should be in the beam
             Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(_beamable._joint.connectedBody.transform.position + _beamable._joint.connectedAnchor, 0.2f);
+            Gizmos.DrawWireSphere(_beamable._tether.connectedBody.transform.position + _beamable._tether.connectedAnchor, 0.2f);
         }
     }
 
@@ -348,7 +336,6 @@ public class TractorBeam : MonoBehaviour
     {
         return LockFire || _input.fire;
     }
-
 
     private bool AltFire()
     {
@@ -399,33 +386,40 @@ public class TractorBeam : MonoBehaviour
         {
             for (int i = _inBeam.Length - 1; i >= 0; i--)
             {
-                GameObject _object = _inBeam[i].collider.gameObject;
+                GameObject obj = _inBeam[i].collider.gameObject;
 
-                if (IsObjectTethered(_object)) continue;
+                if (IsObjectTethered(obj)) continue;
 
                 // if beam is full
                 if (_tetheredBeamables.Count >= MaxBeamableObjects)
                 {
-                    DenyTether(_object);
+                    DenyTether(obj);
                     continue;
                 }
-                var size = Round10(GetObjectSize(_object.GetComponent<MeshFilter>()));
-                if (size > Round10(_beamPickupPower))
+
+                var size = Util.Round(MeshFilters.GetObjectLargestBound(obj), 10f);
+                if (size > GetPickupPowerRounded())
                 {
-                    DenyTether(_object);
+                    DenyTether(obj);
                     continue;
                 }
-                Tether(_object);
+                Tether(obj);
             }
         }
     }
-    private bool _setNext = false;
+
+
+    public float GetPickupPowerRounded()
+    {
+        return Util.Round(_beamPickupPower, 10f);
+    }
     public void Tether(GameObject obj)
     {
         // destroy an existing tether
         Beamable beamable = new Beamable(obj, this);
 
-        _nextLastBeamedObject = obj;
+        // TODO: event system
+        _nextBeamable = beamable;
 
         // add beamable to tethered dictionary
         AddGrabbedBeamable(beamable);
@@ -451,7 +445,7 @@ public class TractorBeam : MonoBehaviour
         // remove and untether any objects in the beam
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
-            Untether(_beamable);
+            if (!_beamable._retract) Untether(_beamable);
         }
     }
 
@@ -478,6 +472,12 @@ public class TractorBeam : MonoBehaviour
         bool hudObjectIsGrabbed = false;
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
+            // joint broke
+            if (_beamable._tether == null)
+            {
+                Untether(_beamable);
+            }
+
             _beamable.HandleFixedUpdate(this);
 
             if (_beamable._gameObject == _lastBeamedObject) hudObjectIsGrabbed = true;
@@ -498,17 +498,20 @@ public class TractorBeam : MonoBehaviour
         // absorb any retracted beamables
         foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
         {
-            if (_beamable._retract && IsRetracted(_beamable._joint))
+            if (_beamable._retract && IsRetracted(_beamable._tether))
             {
                 AbsorbBeamable(_beamable);
-                _beamPickupPower += GetObjectSize(_beamable._gameObject.GetComponent<MeshFilter>()) * 0.02f;
+                _beamPickupPower += MeshFilters.GetMeshFilterLargestBound(_beamable._meshFilter) * 0.02f;
             }
         }
     }
 
     public bool IsRetracted(ConfigurableJoint joint)
-    {   
-        return joint.connectedAnchor.magnitude <= 0.5f;
+    {
+        // TODO: MAKE better
+        // perhaps bring back the death sphere
+        float diff = Vector3.Distance(joint.transform.position, joint.connectedBody.transform.position);
+        return diff <= 2.5f && joint.connectedAnchor.y <= 0.1f;
     }
 
     private void AbsorbBeamable(Beamable beamable)
@@ -635,39 +638,38 @@ public class TractorBeam : MonoBehaviour
     public class Beamable
     {
         public GameObject _gameObject;
-        public int _instanceID;
-        public ConfigurableJoint _joint;
+        public ConfigurableJoint _tether;
         public bool _retract = false;
         public Rigidbody _rb;
         public float _originalMass;
+        public MeshFilter _meshFilter;
 
         // TODO: optimize
         public LineRenderer _line;
 
         public Beamable(GameObject obj, TractorBeam beam)
         {
+            // set internal object
             _gameObject = obj;
-            _instanceID = _gameObject.GetInstanceID();
 
-            _joint = TetherJoints.CreateTether(obj, beam);
+            // create joint tether
+            _tether = TetherJoints.CreateTether(obj, beam);
 
+            // ensure mesh colliders are convex
             MeshColliders.SetMeshCollidersToConvex(_gameObject);
 
+            // physics properties
             _rb = _gameObject.GetComponent<Rigidbody>();
             _rb.isKinematic = false;
-
             _originalMass = _rb.mass;
 
+            // mesh
+            _meshFilter = _gameObject.GetComponent<MeshFilter>();
+
+            // TODO: constants
             _gameObject.layer = 8;
-            // ObjectRenderSnapable snap = _gameObject.GetComponent<ObjectRenderSnapable>();
-            // if (snap != null)
-            // {
-            //     snap.sleep = false;
-            //     snap.SnapEulerAngles = false;
-            //     // snap.angleResolution = 15f;
-            // }
 
-
+            // TODO: variable spin factor
             var spin = RandomSpin.GetRandomSpin() * 10f;
             _rb.AddTorque(spin);
         }
@@ -675,26 +677,32 @@ public class TractorBeam : MonoBehaviour
         public void HandleUpdate(TractorBeam beam)
         {
             // draw the beam
-            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _joint);
+            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _tether);
             else TetherJoints.ClearJointLine(_line);
         }
 
-
         public void HandleFixedUpdate(TractorBeam beam)
         {
-            if (_joint == null) return;
-            if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_joint, _retract);
+            UpdateTether(beam);
+            SlowVelocity(beam);
+        }
 
-            TetherJoints.UpdateJointProperties(_joint, beam, _retract);
+        public void UpdateTether(TractorBeam beam)
+        {
+            if (_tether == null) return;
+            if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_tether, _retract);
+            TetherJoints.UpdateJointProperties(_tether, beam, _retract);
 
             // this controls joint retraction
             // when fully retracted the beamable is absorbed
             if (_retract)
             {
-                TetherJoints.RetractJoint(_joint);
+                TetherJoints.RetractJoint(_tether);
             }
+        }
 
-            // slow down the object
+        public void SlowVelocity(TractorBeam beam)
+        {
             _rb.velocity = _rb.velocity * 0.9f;
         }
 
@@ -702,17 +710,27 @@ public class TractorBeam : MonoBehaviour
         {
             _retract = true;
             _rb.mass = 1f;
+
+            // TODO: constants
             _gameObject.layer = 9;
-        }   
+        }
 
         public void Untether()
         {
-            _rb.mass = _originalMass;
+            // TODO: constants
             _gameObject.layer = 8;
+
+            _rb.mass = _originalMass;
             TetherJoints.ClearJointLine(_line);
-            Destroy(_joint);
+            if (_tether != null) Destroy(_tether);
+        }
+
+        public float Size()
+        {
+            return Util.Round(MeshFilters.GetMeshFilterLargestBound(_meshFilter), 10f);
         }
     }
+
     public float AnchorDepth()
     {
         return _beamDepth * GameConstants.Instance()._beamAttributes.BeamGrabAnchorDepthCoefficient;

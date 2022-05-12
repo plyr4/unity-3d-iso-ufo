@@ -4,20 +4,32 @@ using UnityEngine;
 
 public static class MeshFilters
 {
+    public static float GetObjectLargestBound(GameObject obj)
+    {   
+        MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
+        return meshFilter == null ? 0 : Mathf.Max(meshFilter.mesh.bounds.size.x, Mathf.Max(meshFilter.mesh.bounds.size.y, meshFilter.mesh.bounds.size.z));
+    }
+
+
+    public static float GetMeshFilterLargestBound(MeshFilter meshFilter)
+    {   
+        return meshFilter == null ? 0 : Mathf.Max(meshFilter.mesh.bounds.size.x, Mathf.Max(meshFilter.mesh.bounds.size.y, meshFilter.mesh.bounds.size.z));
+    }
 
     public static Vector3 GetAnchorPivotPosition(MeshFilter meshFilter)
     {
-        if (meshFilter == null)
-        {
-            return Vector3.zero;
-        }
-        return meshFilter.mesh.bounds.center;
+        return meshFilter == null ? Vector3.zero : meshFilter.mesh.bounds.center;
     }
-    public static void ScaleObjectToMeshBounds(MeshFilter meshFilter)
-    {
 
-        Mesh _mesh = meshFilter.mesh;
-        Bounds bounds = _mesh.bounds;
+    public static void ScaleObjectToMeshBounds(GameObject obj)
+    {
+        MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
+
+        // nothing to scale to
+        if (meshFilter == null) return;
+
+        Mesh mesh = meshFilter.mesh;
+        Bounds bounds = mesh.bounds;
         var szA = Vector3.one;
         var szB = bounds.size;
         var xR = szA.x / szB.x;
@@ -57,8 +69,6 @@ public static class MeshFilters
                 scale = new Vector3(meshFilter.transform.localScale.x * rrR, yR, meshFilter.transform.localScale.z * rrR);
             }
         }
-
-
 
         meshFilter.transform.localScale = scale;
     }

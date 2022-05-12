@@ -98,7 +98,7 @@ public static class TetherJoints
         // _linearLimit.limit = joint.linearLimit.limit - Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed;
         // joint.linearLimit = _linearLimit;
         SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
-        linearLimitSpring.spring = 2f;
+        linearLimitSpring.spring = 3f;
         linearLimitSpring.damper = 1f;
         joint.linearLimitSpring = linearLimitSpring;
         joint.connectedAnchor = Vector3.Lerp(joint.connectedAnchor, Vector3.zero, Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed);
