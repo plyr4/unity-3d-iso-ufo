@@ -21,9 +21,9 @@ public static class MeshFilters
         return meshFilter == null ? Vector3.zero : meshFilter.mesh.bounds.center;
     }
 
-    public static void ScaleObjectToMeshBounds(GameObject obj)
+    public static void ScaleChildObjectToMeshBounds(GameObject obj)
     {
-        MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
+        MeshFilter meshFilter = obj.GetComponentInChildren<MeshFilter>();
 
         // nothing to scale to
         if (meshFilter == null) return;

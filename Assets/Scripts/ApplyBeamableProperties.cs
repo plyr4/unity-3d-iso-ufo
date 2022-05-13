@@ -18,7 +18,6 @@ public class ApplyBeamableProperties : MonoBehaviour
         if (gameObject.GetComponent<BoxCollider>() != null) collider =  true;
         if (gameObject.GetComponent<SphereCollider>() != null) collider =  true;
         if (gameObject.GetComponent<CapsuleCollider>() != null) collider =  true;
-
         MeshCollider mc = gameObject.GetComponent<MeshCollider>();
         if (mc != null)
         {

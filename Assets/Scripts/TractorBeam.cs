@@ -8,31 +8,28 @@ public class TractorBeam : MonoBehaviour
     [Header("Input Settings")]
     [SerializeField]
     private PlayerInputs _input;
+    [Header("Events")]
+    [Space]
+    [Space]
+    [Space]
+    [SerializeField]
+    private GameEvent _tetherEvent;
+    [SerializeField]
+    private GameEvent _untetherEvent;
+    [SerializeField]
+    private GameEvent _beamFullEvent;
+    [SerializeField]
+    private GameEvent _updateGUITetheredObjectEvent;
     [Header("3D UI")]
     [Space]
     [Space]
     [Space]
-    [SerializeField]
-    private TextMeshPro _lastBeamedObjectName;
-    [SerializeField]
-    private TextMeshPro _lastBeamedObjectSize;
-    [SerializeField]
-    private GameObject _lastBeamedObjectMeshParent;
-    [SerializeField]
-    private GameObject _lastBeamedObjectMeshCircles;
+    public GameObject _lastTethered;
     [SerializeField]
     private TextMeshPro _beamStrengthUI;
     [SerializeField]
     private TextMeshPro _beamCapacityUI;
 
-    [SerializeField]
-    private GameObject _lastBeamedObject;
-    [SerializeField]
-    private GameObject _lastBeamedObjectHUD;
-    [SerializeField]
-    private TextMeshPro _beamFullIndicator;
-    [SerializeField]
-    private Beamable _nextBeamable;
 
     [Header("Beam Settings")]
     [Space]
@@ -61,8 +58,6 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     private int MaxBeamableObjects = 50;
     [SerializeField]
-    private float BeamFullShakeStrength = 2f;
-    [SerializeField]
     [Range(0.01f, 50f)]
     private float MaxBeamDepth = 20f;
     [SerializeField]
@@ -75,7 +70,7 @@ public class TractorBeam : MonoBehaviour
     [Range(0f, 1f)]
     private float StrengthToGrab = 0.95f;
     [SerializeField]
-    private bool TrackBeamableObjectJointChanges = false;
+    public bool TrackBeamableObjectJointChanges = false;
     [SerializeField]
     private LayerMask GroundLayers;
     [SerializeField]
@@ -172,15 +167,6 @@ public class TractorBeam : MonoBehaviour
         UpdateUI();
     }
 
-    // TODO: convert to lookup-name (or fix the names of prefabs)
-    string TrimName(string name)
-    {
-        int index = name.IndexOf(" ");
-        if (index >= 0) name = name.Substring(0, index);
-        name = name.Replace('-', ' ');
-        return name;
-    }
-
     // TODO: move to event system
     private void UpdateUI()
     {
@@ -198,81 +184,8 @@ public class TractorBeam : MonoBehaviour
         }
         _beamStrengthUI.text = string.Format("{0}m", GetPickupPowerRounded());
 
-
-        // if beam is full
-        if (_tetheredBeamables.Count >= MaxBeamableObjects)
-        {
-            if (!_beamFullIndicator.gameObject.activeInHierarchy)
-            {
-                _beamFullIndicator.gameObject.SetActive(true);
-                _beamFullIndicator.GetComponent<CanvasShake>().Shake(BeamFullShakeStrength);
-            }
-            LookAtCamera.Look(_beamFullIndicator.transform);
-        }
-        else
-        {
-            _beamFullIndicator.gameObject.SetActive(false);
-            _beamFullIndicator.GetComponent<CanvasShake>().shakeStrength = 0f;
-        }
-
-        UpdateLastBeamed(_nextBeamable);
+        // UpdateLastBeamed(_nextBeamable);
     }
-
-    // TODO: move to event system
-    private void UpdateLastBeamed(Beamable next)
-    {
-        if (next == null) return;
-        if (next._gameObject == null) return;
-        if (next._gameObject == _lastBeamedObject) return;
-
-
-        if (next != null && _lastBeamedObject != null && (TrimName(next._gameObject.name) == TrimName(_lastBeamedObject.name))) return;
-
-
-        foreach (Transform child in _lastBeamedObjectMeshParent.transform)
-        {
-            Destroy(child.gameObject);
-        }
-        GameObject displayedObject = Instantiate(next._gameObject) as GameObject;
-
-        Rigidbody rb = displayedObject.GetComponent<Rigidbody>();
-        rb.angularVelocity = next._rb.angularVelocity;
-        rb.constraints = RigidbodyConstraints.FreezePosition;
-
-        displayedObject.transform.SetParent(_lastBeamedObjectMeshParent.transform, false);
-
-        displayedObject.layer = 5;
-        Destroy(displayedObject.GetComponent<ConfigurableJoint>());
-        Destroy(displayedObject.GetComponent<LineRenderer>());
-
-
-        var centerPos = MeshFilters.GetAnchorPivotPosition(displayedObject.GetComponent<MeshFilter>());
-
-        displayedObject.transform.localEulerAngles = Vector3.zero;
-        displayedObject.transform.localScale = Vector3.one;
-
-        MeshFilters.ScaleObjectToMeshBounds(displayedObject);
-
-        displayedObject.transform.localPosition = -centerPos * displayedObject.transform.localScale.x;
-
-        displayedObject.gameObject.SetActive(true);
-
-        var t = TrimName(displayedObject.gameObject.name);
-        _lastBeamedObjectName.text = t;
-        _lastBeamedObjectSize.text = string.Format("{0}m", next.Size());
-        _lastBeamedObject = next._gameObject;
-        _lastBeamedObjectHUD = displayedObject;
-        _lastBeamedObjectMeshCircles.SetActive(true);
-
-        _nextBeamable = null;
-    }
-
-    // TODO: move to event system
-    private void FixedUpdateUI()
-    {
-        if (_lastBeamedObjectHUD != null && _lastBeamedObject != null) _lastBeamedObjectHUD.GetComponent<Rigidbody>().angularVelocity = _lastBeamedObject.GetComponent<Rigidbody>().angularVelocity;
-    }
-
 
     private void FixedUpdate()
     {
@@ -283,7 +196,6 @@ public class TractorBeam : MonoBehaviour
         if (!Fire()) ReleaseBeam();
         if (AltFire()) RetractBeam();
         AbsorbBeamables();
-        FixedUpdateUI();
     }
 
     private void OnDrawGizmosSelected()
@@ -394,6 +306,7 @@ public class TractorBeam : MonoBehaviour
                 if (_tetheredBeamables.Count >= MaxBeamableObjects)
                 {
                     DenyTether(obj);
+                    _beamFullEvent?.Invoke();
                     continue;
                 }
 
@@ -413,16 +326,16 @@ public class TractorBeam : MonoBehaviour
     {
         return Util.Round(_beamPickupPower, 10f);
     }
+    private GameObject _previous;
     public void Tether(GameObject obj)
     {
         // destroy an existing tether
         Beamable beamable = new Beamable(obj, this);
 
-        // TODO: event system
-        _nextBeamable = beamable;
-
         // add beamable to tethered dictionary
         AddGrabbedBeamable(beamable);
+        _lastTethered = obj;
+        _tetherEvent?.Invoke(obj, beamable);
     }
 
     public void Untether(Beamable beamable)
@@ -432,6 +345,8 @@ public class TractorBeam : MonoBehaviour
 
         // remove beamable from tethered dictionary
         RemoveGrabbedBeamable(beamable);
+
+        _untetherEvent?.Invoke(null, beamable);
     }
 
 
@@ -452,12 +367,12 @@ public class TractorBeam : MonoBehaviour
     private void RetractBeam()
     {
         // pull up any objects in the beam
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.Retract();
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList()) beamable.Retract();
     }
     private bool IsHoldingUnretractedBeamables()
     {
-        Beamable _tetherBeamable = _tetheredBeamables.Values.FirstOrDefault(_b => !_b._retract);
-        return _tetherBeamable != null;
+        Beamable tetherBeamable = _tetheredBeamables.Values.FirstOrDefault(b => !b._retract);
+        return tetherBeamable != null;
     }
     private void UpdateBeamables()
     {
@@ -465,31 +380,22 @@ public class TractorBeam : MonoBehaviour
         if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
         else TetherJoints.ClearJointLine(_line);
 
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList()) _beamable.HandleUpdate(this);
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList()) beamable.HandleUpdate(this);
     }
     private void FixedUpdateBeamables()
-    {
-        bool hudObjectIsGrabbed = false;
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+    {   
+        bool f = false;
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
             // joint broke
-            if (_beamable._tether == null)
+            if (beamable._tether == null)
             {
-                Untether(_beamable);
+                Untether(beamable);
             }
 
-            _beamable.HandleFixedUpdate(this);
+            beamable.HandleFixedUpdate(this);
 
-            if (_beamable._gameObject == _lastBeamedObject) hudObjectIsGrabbed = true;
-        }
-        if (!hudObjectIsGrabbed)
-        {
-            _lastBeamedObject = null;
-            if (_lastBeamedObjectHUD != null) Destroy(_lastBeamedObjectHUD);
-            if (_lastBeamedObjectMeshCircles != null) _lastBeamedObjectMeshCircles.SetActive(false);
-            _lastBeamedObjectHUD = null;
-            _lastBeamedObjectName.text = "";
-            _lastBeamedObjectSize.text = "";
+            if (beamable._gameObject == _lastTethered) _updateGUITetheredObjectEvent?.Invoke(null, beamable);
         }
     }
 
@@ -633,103 +539,6 @@ public class TractorBeam : MonoBehaviour
 
 
     // BEAMABLE OBJECT GARBAGE
-
-
-    public class Beamable
-    {
-        public GameObject _gameObject;
-        public ConfigurableJoint _tether;
-        public bool _retract = false;
-        public Rigidbody _rb;
-        public float _originalMass;
-        public MeshFilter _meshFilter;
-
-        // TODO: optimize
-        public LineRenderer _line;
-
-        public Beamable(GameObject obj, TractorBeam beam)
-        {
-            // set internal object
-            _gameObject = obj;
-
-            // create joint tether
-            _tether = TetherJoints.CreateTether(obj, beam);
-
-            // ensure mesh colliders are convex
-            MeshColliders.SetMeshCollidersToConvex(_gameObject);
-
-            // physics properties
-            _rb = _gameObject.GetComponent<Rigidbody>();
-            _rb.isKinematic = false;
-            _originalMass = _rb.mass;
-
-            // mesh
-            _meshFilter = _gameObject.GetComponent<MeshFilter>();
-
-            // TODO: constants
-            _gameObject.layer = 8;
-
-            // TODO: variable spin factor
-            var spin = RandomSpin.GetRandomSpin() * 10f;
-            _rb.AddTorque(spin);
-        }
-
-        public void HandleUpdate(TractorBeam beam)
-        {
-            // draw the beam
-            if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _tether);
-            else TetherJoints.ClearJointLine(_line);
-        }
-
-        public void HandleFixedUpdate(TractorBeam beam)
-        {
-            UpdateTether(beam);
-            SlowVelocity(beam);
-        }
-
-        public void UpdateTether(TractorBeam beam)
-        {
-            if (_tether == null) return;
-            if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_tether, _retract);
-            TetherJoints.UpdateJointProperties(_tether, beam, _retract);
-
-            // this controls joint retraction
-            // when fully retracted the beamable is absorbed
-            if (_retract)
-            {
-                TetherJoints.RetractJoint(_tether);
-            }
-        }
-
-        public void SlowVelocity(TractorBeam beam)
-        {
-            _rb.velocity = _rb.velocity * 0.9f;
-        }
-
-        public void Retract()
-        {
-            _retract = true;
-            _rb.mass = 1f;
-
-            // TODO: constants
-            _gameObject.layer = 9;
-        }
-
-        public void Untether()
-        {
-            // TODO: constants
-            _gameObject.layer = 8;
-
-            _rb.mass = _originalMass;
-            TetherJoints.ClearJointLine(_line);
-            if (_tether != null) Destroy(_tether);
-        }
-
-        public float Size()
-        {
-            return Util.Round(MeshFilters.GetMeshFilterLargestBound(_meshFilter), 10f);
-        }
-    }
 
     public float AnchorDepth()
     {
