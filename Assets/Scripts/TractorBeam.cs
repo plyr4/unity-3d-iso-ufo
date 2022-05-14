@@ -8,10 +8,11 @@ public class TractorBeam : MonoBehaviour
     [Header("Input Settings")]
     [SerializeField]
     private PlayerInputs _input;
+    [Space]
+    [Space]
+    [Space]
+
     [Header("Events")]
-    [Space]
-    [Space]
-    [Space]
     [SerializeField]
     private GameEvent _tetherEvent;
     [SerializeField]
@@ -19,89 +20,97 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     private GameEvent _beamFullEvent;
     [SerializeField]
-    private GameEvent _updateGUITetheredObjectEvent;
-    [Header("3D UI")]
-    [Space]
-    [Space]
-    [Space]
-    public GameObject _lastTethered;
+    private GameEvent _beamableFixedUpdateEvent;
     [SerializeField]
-    private TextMeshPro _beamStrengthUI;
+    private GameEvent _beamableUpdateEvent;
     [SerializeField]
-    private TextMeshPro _beamCapacityUI;
-
+    private GameEvent _absorbBeamableEvent;
+    [Space]
+    [Space]
+    [Space]
 
     [Header("Beam Settings")]
-    [Space]
-    [Space]
-    [Space]
     [SerializeField]
     private Transform _beamSource;
     [SerializeField]
     private Rigidbody _tetherAnchor;
     [Space]
+
     [SerializeField]
-    private float _beamPickupPower;
+    private float _pickupPower;
     [SerializeField]
     [Range(0f, 1f)]
-    private float _beamStrength;
+    private float _strength;
     [SerializeField]
-    private bool LockBeamStrength;
+    private bool LockStrength;
     [SerializeField]
     public bool LockFire;
     [SerializeField]
     private bool LockAltFire;
     [Space]
+
     [SerializeField]
     [Range(0.01f, 10f)]
-    private float BeamStrengthGrowthRate = 2f;
+    private float StrengthGrowthRate = 2f;
     [SerializeField]
-    private int MaxBeamableObjects = 50;
+    public int MaxBeamableObjects = 50;
+    [SerializeField]
+    [Range(0.01f, 5f)]
+    private float AnchorDepthFactor = 0.75f;
+    [SerializeField]
+    [Range(0.01f, 25f)]
+    public float RetractionSpeed = 4f;
     [SerializeField]
     [Range(0.01f, 50f)]
-    private float MaxBeamDepth = 20f;
+    private float MaxDepth = 25f;
     [SerializeField]
     [Range(0.01f, 10f)]
-    private float MaxBeamRadius = 4f;
+    private float MaxRadius = 2.8f;
     [SerializeField]
     [Range(0.01f, 2f)]
-    private float BeamRangeModifier = 1.4f;
+    private float RangeFactor = 1.4f;
     [SerializeField]
     [Range(0f, 1f)]
-    private float StrengthToGrab = 0.95f;
+    private float StrengthToGrab = 0.2f;
     [SerializeField]
-    public bool TrackBeamableObjectJointChanges = false;
+    public bool TrackBeamableObjectJointChanges = true;
+    [SerializeField]
+    public bool DrawJoints = false;
+    [SerializeField]
+    public Vector2 DrawJointWidth = new Vector2(0.02f, 0.08f);
+    [SerializeField]
+    public Material DrawJointMaterial;
     [SerializeField]
     private LayerMask GroundLayers;
     [SerializeField]
     private LayerMask BeamableLayers;
     private RaycastHit[] _inBeam;
-    private Dictionary<int, Beamable> _tetheredBeamables;
+    public Dictionary<int, Beamable> _tetheredBeamables;
     private LineRenderer _line;
+    [Space]
+    [Space]
+    [Space]
 
     [Header("Light Settings")]
+    [SerializeField]
+    private bool LockLightProperties = false;
     [Space]
-    [Space]
-    [Space]
+
     [SerializeField]
-    private Light _beamSpotLight;
+    private float VLBSpotAngleFactor = 0.7f;
     [SerializeField]
-    private VolumetricLightBeam _vlb;
-    [Space]
+    private float BeamSpotLightSpotAngleFactor = 0.25f;
     [SerializeField]
-    private bool LockLightProperties = true;
-    [Space]
+    private float VLBRangeStrengthFactor = 0.5f;
     [SerializeField]
-    private float VLBSpotAngleModifier = 0.7f;
-    [SerializeField]
-    private float BeamSpotLightSpotAngleModifier = 0.25f;
-    [SerializeField]
-    private float VLBRangeStrengthCoefficient = 0.5f;
+    public Color GrabSpotLightColor = Color.cyan;
     private Color _originalSpotLightColor;
+    private Light _beamSpotLight;
+    private VolumetricLightBeam _vlb;
 
     // cached beam properties
     private float _cachedTime;
-    public float _beamRadius
+    public float _radius
     {
         get
         {
@@ -111,7 +120,7 @@ public class TractorBeam : MonoBehaviour
     }
     private float _cachedRadius;
 
-    public float _beamDepth
+    public float _depth
     {
         get
         {
@@ -121,7 +130,7 @@ public class TractorBeam : MonoBehaviour
     }
     private float _cachedDepth;
 
-    public float _beamAngle
+    public float _angle
     {
         get
         {
@@ -148,6 +157,9 @@ public class TractorBeam : MonoBehaviour
 
     private void InitializeBeam()
     {
+        // initialize the source transform
+        if (_beamSource == null) _beamSource = transform;
+
         // initialize cone raycast hits
         _inBeam = new RaycastHit[0];
 
@@ -162,29 +174,6 @@ public class TractorBeam : MonoBehaviour
     {
         UpdateBeamStrength();
         UpdateBeamables();
-
-        // TODO: move to event system
-        UpdateUI();
-    }
-
-    // TODO: move to event system
-    private void UpdateUI()
-    {
-
-        // beam capacity
-        // TODO: convert this to "weight" carried
-        _beamCapacityUI.text = string.Format("{0}/{1}", _tetheredBeamables.Keys.Count, MaxBeamableObjects);
-        if (_tetheredBeamables.Keys.Count >= MaxBeamableObjects)
-        {
-            _beamCapacityUI.color = Color.red;
-        }
-        else
-        {
-            _beamCapacityUI.color = Color.white;
-        }
-        _beamStrengthUI.text = string.Format("{0}m", GetPickupPowerRounded());
-
-        // UpdateLastBeamed(_nextBeamable);
     }
 
     private void FixedUpdate()
@@ -200,26 +189,9 @@ public class TractorBeam : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        DrawBeamDepthRay();
-        DrawBeamPickupSphere();
-        DrawTetherJoints();
-    }
-
-    private void DrawTetherJoints()
-    {
-        if (_tetheredBeamables == null) return;
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
-        {
-            // joint.anchor
-            // should be in the center of the hanging object
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(_beamable._gameObject.transform.position + _beamable._gameObject.transform.TransformDirection(_beamable._tether.anchor), 0.2f);
-
-            // joint.connectedAnchor
-            // should be in the beam
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(_beamable._tether.connectedBody.transform.position + _beamable._tether.connectedAnchor, 0.2f);
-        }
+        GizmosDrawBeamDepthRay();
+        GizmosDrawBeamPickupSphere();
+        GizmosDrawTetherJoints();
     }
 
     private void InitializeInputs()
@@ -227,6 +199,9 @@ public class TractorBeam : MonoBehaviour
         if (_input == null) _input = GetComponent<PlayerInputs>();
         if (_input == null) _input = GetComponentInChildren<PlayerInputs>();
         if (_input == null) _input = transform.parent.GetComponent<PlayerInputs>();
+
+
+        if (_input == null) Debug.LogWarning("TractorBeam initialization error: _input:PlayerInputs not initialized");
     }
 
     private void InitializeLights()
@@ -236,12 +211,15 @@ public class TractorBeam : MonoBehaviour
         if (_beamSpotLight == null) _beamSpotLight = GetComponentInChildren<Light>();
         if (_beamSpotLight == null) _beamSpotLight = transform.parent.GetComponent<Light>();
 
-        _originalSpotLightColor = _beamSpotLight.color;
+        if (_beamSpotLight != null) _originalSpotLightColor = _beamSpotLight.color;
 
         // volumetric light beam
         if (_vlb == null) _vlb = GetComponent<VolumetricLightBeam>();
         if (_vlb == null) _vlb = GetComponentInChildren<VolumetricLightBeam>();
         if (_vlb == null) _vlb = transform.parent.GetComponent<VolumetricLightBeam>();
+
+        if (_beamSpotLight == null) Debug.LogWarning("TractorBeam initialization error: _beamSpotLight:Light not initialized");
+        if (_vlb == null) Debug.LogWarning("TractorBeam initialization error: _vlb:VolumetricLightBeam not initialized");
     }
 
     private bool Fire()
@@ -256,7 +234,7 @@ public class TractorBeam : MonoBehaviour
 
     private void UpdateBeamStrength()
     {
-        _beamStrength = Mathf.Clamp(_beamStrength += (LockBeamStrength ? 0 : (Fire() ? 1 : -1)) * BeamStrengthGrowthRate * Time.deltaTime, 0f, 1f);
+        _strength = Mathf.Clamp(_strength += (LockStrength ? 0 : (Fire() ? 1 : -1)) * StrengthGrowthRate * Time.deltaTime, 0f, 1f);
     }
 
     private void UpdateBeamProperties()
@@ -268,30 +246,30 @@ public class TractorBeam : MonoBehaviour
         _cachedDepth = GetBeamDepth();
 
         // radius of the beam capture cone
-        _cachedRadius = MaxBeamRadius * _cachedDepth / MaxBeamDepth;
+        _cachedRadius = MaxRadius * _cachedDepth / MaxDepth;
 
         // angle of the capture cone (does this change?)
-        _cachedAngle = Mathf.Atan(_cachedDepth / _cachedRadius / MaxBeamRadius) * Mathf.Rad2Deg;
+        _cachedAngle = Mathf.Atan(_cachedDepth / _cachedRadius / MaxRadius) * Mathf.Rad2Deg;
 
         // apply dynamic properties to beam lights
-        if (LockLightProperties) ApplyLightProperties();
+        if (!LockLightProperties) ApplyDynamicLightProperties();
     }
 
     private void FireBeam()
     {
         // beam has no strength
         //    this saves on useless physics calls and potentially invalid math
-        if (_beamStrength <= 0f) return;
+        if (_strength <= 0f) return;
 
         // control how much strength is required for the beam to function
-        if (_beamStrength < StrengthToGrab) return;
+        if (_strength < StrengthToGrab) return;
 
         // apply visual effects
         ApplyBeamColors();
 
         // use cone cast to capture objects in the beam cone
         _inBeam = physics.ConeCastAll(
-            _beamSource.position, AdjustedBeamRadius(), BeamDirection(), AdjustedBeamDistance(), _beamAngle, BeamableLayers);
+            _beamSource.position, Radius(), Direction(), Depth(), _angle, BeamableLayers);
 
         // the beam cone contains objects
         if (_inBeam.Length > 0)
@@ -324,9 +302,9 @@ public class TractorBeam : MonoBehaviour
 
     public float GetPickupPowerRounded()
     {
-        return Util.Round(_beamPickupPower, 10f);
+        return Util.Round(_pickupPower, 10f);
     }
-    private GameObject _previous;
+
     public void Tether(GameObject obj)
     {
         // destroy an existing tether
@@ -334,8 +312,8 @@ public class TractorBeam : MonoBehaviour
 
         // add beamable to tethered dictionary
         AddGrabbedBeamable(beamable);
-        _lastTethered = obj;
-        _tetherEvent?.Invoke(obj, beamable);
+
+        _tetherEvent?.Invoke(this, beamable);
     }
 
     public void Untether(Beamable beamable)
@@ -346,7 +324,7 @@ public class TractorBeam : MonoBehaviour
         // remove beamable from tethered dictionary
         RemoveGrabbedBeamable(beamable);
 
-        _untetherEvent?.Invoke(null, beamable);
+        _untetherEvent?.Invoke(this, beamable);
     }
 
 
@@ -358,9 +336,9 @@ public class TractorBeam : MonoBehaviour
     private void ReleaseBeam()
     {
         // remove and untether any objects in the beam
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
-            if (!_beamable._retract) Untether(_beamable);
+            if (!beamable._retract) Untether(beamable);
         }
     }
 
@@ -377,14 +355,16 @@ public class TractorBeam : MonoBehaviour
     private void UpdateBeamables()
     {
         // draw or clear the beam line
-        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
+        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && DrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
         else TetherJoints.ClearJointLine(_line);
 
-        foreach (Beamable beamable in _tetheredBeamables.Values.ToList()) beamable.HandleUpdate(this);
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
+        {
+            beamable.HandleUpdate(this, _beamableUpdateEvent);
+        }
     }
     private void FixedUpdateBeamables()
-    {   
-        bool f = false;
+    {
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
             // joint broke
@@ -393,21 +373,20 @@ public class TractorBeam : MonoBehaviour
                 Untether(beamable);
             }
 
-            beamable.HandleFixedUpdate(this);
-
-            if (beamable._gameObject == _lastTethered) _updateGUITetheredObjectEvent?.Invoke(null, beamable);
+            beamable.HandleFixedUpdate(this, _beamableFixedUpdateEvent);
         }
     }
 
     private void AbsorbBeamables()
     {
         // absorb any retracted beamables
-        foreach (Beamable _beamable in _tetheredBeamables.Values.ToList())
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
-            if (_beamable._retract && IsRetracted(_beamable._tether))
+            if (beamable._retract && IsRetracted(beamable._tether))
             {
-                AbsorbBeamable(_beamable);
-                _beamPickupPower += MeshFilters.GetMeshFilterLargestBound(_beamable._meshFilter) * 0.02f;
+                AbsorbBeamable(beamable);
+                _pickupPower += MeshFilters.GetMeshFilterLargestBound(beamable._meshFilter) * 0.02f;
+                _absorbBeamableEvent?.Invoke(this, beamable);
             }
         }
     }
@@ -432,6 +411,7 @@ public class TractorBeam : MonoBehaviour
     private void DenyTether(GameObject obj)
     {
         // Debug.Log("implement this with some static object wiggle or something");
+        // shake only the mesh somehow? to not interfere with anything else like colliders or physics
     }
 
     private void AddGrabbedBeamable(Beamable beamable)
@@ -445,9 +425,9 @@ public class TractorBeam : MonoBehaviour
     }
     private float GetBeamDepth()
     {
-        // sends Raycast to the terrain and returns either distance to hit or MaxBeamDepth
+        // sends Raycast to the terrain and returns either distance to hit or MaxDepth
         RaycastHit hit;
-        return Physics.Raycast(_beamSource.position, BeamDirection(), out hit, MaxBeamDepth, GroundLayers) ? hit.distance : MaxBeamDepth;
+        return Physics.Raycast(_beamSource.position, Direction(), out hit, MaxDepth, GroundLayers) ? hit.distance : MaxDepth;
     }
 
     public Rigidbody GetTetherAnchor()
@@ -455,19 +435,25 @@ public class TractorBeam : MonoBehaviour
         return _tetherAnchor;
     }
 
-    private Vector3 BeamDirection()
+    private Vector3 Direction()
     {
         return -_beamSource.up;
     }
 
-    private float AdjustedBeamDistance()
+    private float Depth()
     {
-        return _beamDepth * _beamStrength;
+        return _depth * _strength;
     }
 
-    private float AdjustedBeamRadius()
+    private float Radius()
     {
-        return _beamRadius * _beamStrength;
+        return _radius * _strength;
+    }
+
+
+    public float AnchorDepth()
+    {
+        return _depth * AnchorDepthFactor;
     }
 
     private void ResetLightColors()
@@ -477,71 +463,69 @@ public class TractorBeam : MonoBehaviour
 
     private void ApplyBeamColors()
     {
-        Color c = GameConstants.Instance()._beamAttributes.BeamGrabSpotLightColor;
         // apply the beam-up color
-        if (_beamSpotLight != null && _beamSpotLight.color != c) _beamSpotLight.color = c;
+        if (_beamSpotLight != null && _beamSpotLight.color != GrabSpotLightColor) _beamSpotLight.color = GrabSpotLightColor;
     }
 
-    private void ApplyLightProperties()
+    private void ApplyDynamicLightProperties()
     {
         // spot light range and angles
         if (_beamSpotLight != null)
         {
             // beam spot light should reach the ground
-            _beamSpotLight.range = _cachedDepth * BeamRangeModifier;
+            _beamSpotLight.range = _cachedDepth * RangeFactor;
 
             // spot angle should match the cone angle as close as possible
-            _beamSpotLight.spotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+            _beamSpotLight.spotAngle = _cachedAngle * BeamSpotLightSpotAngleFactor;
 
             // the inner spot angle matches the outer spot angle
-            _beamSpotLight.innerSpotAngle = _cachedAngle * BeamSpotLightSpotAngleModifier;
+            _beamSpotLight.innerSpotAngle = _cachedAngle * BeamSpotLightSpotAngleFactor;
         }
 
         // volumetric light shaft range and angle
         if (_vlb != null)
         {
             // vlb light should reach the spot light distance
-            float _range = (_beamSpotLight != null) ? _beamSpotLight.range : _cachedDepth * BeamRangeModifier;
+            float _range = (_beamSpotLight != null) ? _beamSpotLight.range : _cachedDepth * RangeFactor;
 
             // vlb fall off should match the strength of the beam
             //    the "beam up effect"
-            _vlb.fallOffEnd = _range * _beamStrength * VLBRangeStrengthCoefficient;
+            _vlb.fallOffEnd = _range * _strength * VLBRangeStrengthFactor;
             _vlb.fallOffStart = _vlb.fallOffEnd;
 
             // vlb spot angle should match the cone angle as close as possible
-            _vlb.spotAngle = _cachedAngle * VLBSpotAngleModifier;
+            _vlb.spotAngle = _cachedAngle * VLBSpotAngleFactor;
         }
     }
 
     // draw the ray between the ship and the ground
-    private void DrawBeamDepthRay()
+    private void GizmosDrawBeamDepthRay()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawRay(_beamSource.position, BeamDirection() * AdjustedBeamDistance());
+        Gizmos.DrawRay(_beamSource.position, Direction() * Depth());
     }
 
     // draw the sphere that is used as a cone raycast radius
-    private void DrawBeamPickupSphere()
+    private void GizmosDrawBeamPickupSphere()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere((_beamSource.position) + BeamDirection() * AdjustedBeamDistance(), AdjustedBeamRadius());
+        Gizmos.DrawWireSphere((_beamSource.position) + Direction() * Depth(), Radius());
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    // BEAMABLE OBJECT GARBAGE
-
-    public float AnchorDepth()
+    private void GizmosDrawTetherJoints()
     {
-        return _beamDepth * GameConstants.Instance()._beamAttributes.BeamGrabAnchorDepthCoefficient;
+        if (_tetheredBeamables == null) return;
+        foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
+        {
+            // joint.anchor
+            // should be in the center of the hanging object
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(beamable._gameObject.transform.position + beamable._gameObject.transform.TransformDirection(beamable._tether.anchor), 0.2f);
+
+            // joint.connectedAnchor
+            // should be in the beam
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position + beamable._tether.connectedAnchor, 0.2f);
+        }
     }
 }

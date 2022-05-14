@@ -29,7 +29,7 @@ public class PlayerMovement : MonoBehaviour
     private Transform _mainCameraPivot;
     private Camera _mainCamera;
     [SerializeField]
-    private float CameraSizeCoefficient = 20f;
+    private float CameraSizeFactor = 20f;
 
     [SerializeField]
     private float CameraRotationSpeed = 75f;
@@ -129,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
     private float BodyTiltDegree = 4f;
     [SerializeField]
     [Range(1f, 2f)]
-    private float BodyTiltBoostCoefficient = 2f;
+    private float BodyTiltBoostFactor = 2f;
     [SerializeField]
     [Range(0f, 1f)]
     private float BodyRotationRate = 0.12f;
@@ -307,7 +307,7 @@ public class PlayerMovement : MonoBehaviour
             float _rotation = Mathf.SmoothDampAngle(_bodyYRotation, _targetRotation, ref _rotationVelocity, BodyRotationRate);
 
             // calculate the tilt based on speed
-            float tilt = _input.boost ? BodyTiltDegree * BodyTiltBoostCoefficient : BodyTiltDegree;
+            float tilt = _input.boost ? BodyTiltDegree * BodyTiltBoostFactor : BodyTiltDegree;
 
             // apply body rotations
             _ufoBody.transform.rotation = Quaternion.Euler(tilt, _rotation, 0f);
@@ -384,6 +384,6 @@ public class PlayerMovement : MonoBehaviour
     private float CalculateOrthographicCameraSize()
     {
         // calculate camera size based on current elevation / max elevation
-        return CameraSizeCoefficient * GetCurrentElevation() / MaxVerticalElevation;
+        return CameraSizeFactor * GetCurrentElevation() / MaxVerticalElevation;
     }
 }

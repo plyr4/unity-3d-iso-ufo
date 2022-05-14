@@ -4,6 +4,7 @@ using UnityEngine;
 
 public static class RandomSpin
 {
+    // TODO: refactor
     public static Vector3 GetRandomSpin()
     {
         float xzModifier = 3f;

@@ -29,6 +29,7 @@ Material:
   - RECEIVE_SHADOWS_ON
   - RECEIVE_SHADOWS_ON
   - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
   - _SPECULAR_SETUP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

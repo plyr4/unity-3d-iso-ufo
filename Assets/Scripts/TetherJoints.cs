@@ -17,65 +17,65 @@ public static class TetherJoints
     public static void UpdateConstantJointProperties(ConfigurableJoint joint, bool isRetracting)
     {
         if (joint == null) return;
-        joint.axis = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.axis;
-        joint.autoConfigureConnectedAnchor = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.autoConfigureConnectedAnchor;
-        joint.secondaryAxis = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.secondaryAxis;
+        joint.axis = GlobalObjects.Instance()._tetherJoint.axis;
+        joint.autoConfigureConnectedAnchor = GlobalObjects.Instance()._tetherJoint.autoConfigureConnectedAnchor;
+        joint.secondaryAxis = GlobalObjects.Instance()._tetherJoint.secondaryAxis;
 
-        joint.xMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.xMotion;
-        joint.yMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.yMotion;
-        joint.zMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.zMotion;
-        joint.angularXMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularXMotion;
-        joint.angularYMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYMotion;
-        joint.angularZMotion = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularZMotion;
+        joint.xMotion = GlobalObjects.Instance()._tetherJoint.xMotion;
+        joint.yMotion = GlobalObjects.Instance()._tetherJoint.yMotion;
+        joint.zMotion = GlobalObjects.Instance()._tetherJoint.zMotion;
+        joint.angularXMotion = GlobalObjects.Instance()._tetherJoint.angularXMotion;
+        joint.angularYMotion = GlobalObjects.Instance()._tetherJoint.angularYMotion;
+        joint.angularZMotion = GlobalObjects.Instance()._tetherJoint.angularZMotion;
 
-        joint.linearLimitSpring = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.linearLimitSpring;
+        joint.linearLimitSpring = GlobalObjects.Instance()._tetherJoint.linearLimitSpring;
 
         if (!isRetracting)
         {
-            joint.linearLimit = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.linearLimit;
+            joint.linearLimit = GlobalObjects.Instance()._tetherJoint.linearLimit;
         }
 
 
-        joint.angularXLimitSpring = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularXLimitSpring;
-        joint.lowAngularXLimit = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.lowAngularXLimit;
-        joint.highAngularXLimit = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.highAngularXLimit;
-        joint.angularYZLimitSpring = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYZLimitSpring;
-        joint.angularYLimit = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYLimit;
-        joint.angularZLimit = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularZLimit;
+        joint.angularXLimitSpring = GlobalObjects.Instance()._tetherJoint.angularXLimitSpring;
+        joint.lowAngularXLimit = GlobalObjects.Instance()._tetherJoint.lowAngularXLimit;
+        joint.highAngularXLimit = GlobalObjects.Instance()._tetherJoint.highAngularXLimit;
+        joint.angularYZLimitSpring = GlobalObjects.Instance()._tetherJoint.angularYZLimitSpring;
+        joint.angularYLimit = GlobalObjects.Instance()._tetherJoint.angularYLimit;
+        joint.angularZLimit = GlobalObjects.Instance()._tetherJoint.angularZLimit;
 
 
 
         // angular drive
-        joint.angularXDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularXDrive;
-        joint.angularYZDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYZDrive;
+        joint.angularXDrive = GlobalObjects.Instance()._tetherJoint.angularXDrive;
+        joint.angularYZDrive = GlobalObjects.Instance()._tetherJoint.angularYZDrive;
 
-        joint.targetPosition = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.targetPosition;
-        joint.targetVelocity = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.targetVelocity;
+        joint.targetPosition = GlobalObjects.Instance()._tetherJoint.targetPosition;
+        joint.targetVelocity = GlobalObjects.Instance()._tetherJoint.targetVelocity;
 
         // positional drive
-        joint.xDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.xDrive;
-        joint.yDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.yDrive;
-        joint.zDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.zDrive;
+        joint.xDrive = GlobalObjects.Instance()._tetherJoint.xDrive;
+        joint.yDrive = GlobalObjects.Instance()._tetherJoint.yDrive;
+        joint.zDrive = GlobalObjects.Instance()._tetherJoint.zDrive;
 
-        joint.targetRotation = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.targetRotation;
-        joint.targetAngularVelocity = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.targetAngularVelocity;
-        joint.rotationDriveMode = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.rotationDriveMode;
-        joint.angularXDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularXDrive;
-        joint.angularYZDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.angularYZDrive;
-        joint.slerpDrive = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.slerpDrive;
-        joint.projectionMode = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.projectionMode;
-        joint.projectionDistance = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.projectionDistance;
-        joint.projectionAngle = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.projectionAngle;
-        joint.configuredInWorldSpace = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.configuredInWorldSpace;
-        joint.swapBodies = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.swapBodies;
-        joint.breakForce = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.breakForce;
-        joint.breakTorque = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.breakTorque;
-        joint.enableCollision = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.enableCollision;
-        joint.enablePreprocessing = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.enablePreprocessing;
+        joint.targetRotation = GlobalObjects.Instance()._tetherJoint.targetRotation;
+        joint.targetAngularVelocity = GlobalObjects.Instance()._tetherJoint.targetAngularVelocity;
+        joint.rotationDriveMode = GlobalObjects.Instance()._tetherJoint.rotationDriveMode;
+        joint.angularXDrive = GlobalObjects.Instance()._tetherJoint.angularXDrive;
+        joint.angularYZDrive = GlobalObjects.Instance()._tetherJoint.angularYZDrive;
+        joint.slerpDrive = GlobalObjects.Instance()._tetherJoint.slerpDrive;
+        joint.projectionMode = GlobalObjects.Instance()._tetherJoint.projectionMode;
+        joint.projectionDistance = GlobalObjects.Instance()._tetherJoint.projectionDistance;
+        joint.projectionAngle = GlobalObjects.Instance()._tetherJoint.projectionAngle;
+        joint.configuredInWorldSpace = GlobalObjects.Instance()._tetherJoint.configuredInWorldSpace;
+        joint.swapBodies = GlobalObjects.Instance()._tetherJoint.swapBodies;
+        joint.breakForce = GlobalObjects.Instance()._tetherJoint.breakForce;
+        joint.breakTorque = GlobalObjects.Instance()._tetherJoint.breakTorque;
+        joint.enableCollision = GlobalObjects.Instance()._tetherJoint.enableCollision;
+        joint.enablePreprocessing = GlobalObjects.Instance()._tetherJoint.enablePreprocessing;
 
         // mass
-        joint.massScale = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.massScale;
-        joint.connectedMassScale = GameConstants.Instance()._beamAttributes.BeamableObjectJoint.connectedMassScale;
+        joint.massScale = GlobalObjects.Instance()._tetherJoint.massScale;
+        joint.connectedMassScale = GlobalObjects.Instance()._tetherJoint.connectedMassScale;
     }
 
     public static void UpdateJointProperties(ConfigurableJoint joint, TractorBeam beam, bool isRetracting)
@@ -92,16 +92,16 @@ public static class TetherJoints
         joint.connectedMassScale = 1f;
     }
 
-    public static void RetractJoint(ConfigurableJoint joint)
+    public static void RetractJoint(TractorBeam beam, ConfigurableJoint joint)
     {
         // var _linearLimit = new SoftJointLimit();
-        // _linearLimit.limit = joint.linearLimit.limit - Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed;
+        // _linearLimit.limit = joint.linearLimit.limit - Time.deltaTime * GlobalObjects.Instance()._beamAttributes.BeamRetractionSpeed;
         // joint.linearLimit = _linearLimit;
         SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
         linearLimitSpring.spring = 3f;
         linearLimitSpring.damper = 1f;
         joint.linearLimitSpring = linearLimitSpring;
-        joint.connectedAnchor = Vector3.Lerp(joint.connectedAnchor, Vector3.zero, Time.deltaTime * GameConstants.Instance()._beamAttributes.BeamRetractionSpeed);
+        joint.connectedAnchor = Vector3.Lerp(joint.connectedAnchor, Vector3.zero, Time.deltaTime * beam.RetractionSpeed);
 
     }
 
@@ -113,11 +113,11 @@ public static class TetherJoints
 
         // set default line renderer properties
         line.enabled = true;
-        line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderStartWidth;
-        line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderEndWidth;
-        line.material = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderMaterial;
-        line.startColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
-        line.endColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+        line.startWidth = beam.DrawJointWidth.x;
+        line.endWidth = beam.DrawJointWidth.y;
+        line.material = beam.DrawJointMaterial;
+        line.startColor = beam.GrabSpotLightColor;
+        line.endColor = beam.GrabSpotLightColor;
 
         // create or update the draw points
         Vector3[] _drawTransforms = BeamAnchorLineTransforms(obj, beam);
@@ -130,7 +130,7 @@ public static class TetherJoints
     }
 
 
-    public static LineRenderer DrawObjectJointLine(GameObject obj, LineRenderer line, ConfigurableJoint joint)
+    public static LineRenderer DrawObjectJointLine(TractorBeam beam, GameObject obj, LineRenderer line, ConfigurableJoint joint)
     {
         // initialize line renderer
         if (line == null) line = obj.GetComponent<LineRenderer>();
@@ -138,11 +138,11 @@ public static class TetherJoints
 
         // set default line renderer properties
         line.enabled = true;
-        line.startWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderEndWidth;
-        line.endWidth = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderStartWidth;
-        line.material = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderMaterial;
-        line.startColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
-        line.endColor = GameConstants.Instance()._beamAttributes.BeamGrabJointRenderColor;
+        line.startWidth = beam.DrawJointWidth.x;
+        line.endWidth = beam.DrawJointWidth.y;
+        line.material = beam.DrawJointMaterial;
+        line.startColor = beam.GrabSpotLightColor;
+        line.endColor = beam.GrabSpotLightColor;
 
         // create or update the draw points
         Vector3[] _drawTransforms = JointObjectLineTransforms(obj, joint);

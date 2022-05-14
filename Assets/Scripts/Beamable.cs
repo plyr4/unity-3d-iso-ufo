@@ -39,17 +39,20 @@ public class Beamable
         _rb.AddTorque(spin);
     }
 
-    public void HandleUpdate(TractorBeam beam)
+    public void HandleUpdate(TractorBeam beam, GameEvent updateGameEvent)
     {
         // draw the beam
-        if (GameConstants.Instance()._beamAttributes.BeamDrawJoints) _line = TetherJoints.DrawObjectJointLine(_gameObject, _line, _tether);
+        if (beam.DrawJoints) _line = TetherJoints.DrawObjectJointLine(beam, _gameObject, _line, _tether);
         else TetherJoints.ClearJointLine(_line);
+
+        updateGameEvent?.Invoke(beam, this);
     }
 
-    public void HandleFixedUpdate(TractorBeam beam)
+    public void HandleFixedUpdate(TractorBeam beam, GameEvent fixedUpdateGameEvent)
     {
         UpdateTether(beam);
         SlowVelocity(beam);
+        fixedUpdateGameEvent?.Invoke(beam, this);
     }
 
     public void UpdateTether(TractorBeam beam)
@@ -62,7 +65,7 @@ public class Beamable
         // when fully retracted the beamable is absorbed
         if (_retract)
         {
-            TetherJoints.RetractJoint(_tether);
+            TetherJoints.RetractJoint(beam, _tether);
         }
     }
 
