@@ -17,6 +17,9 @@ public class CanvasShake : MonoBehaviour
     Color originalImageColor, originalTextColor;
 
     [SerializeField]
+    public bool ChangeColor;
+
+    [SerializeField]
     public Color ShakeColor;
     [SerializeField]
     public Image image;
@@ -33,15 +36,21 @@ public class CanvasShake : MonoBehaviour
 
     void Update()
     {
-        if (image != null) image.color = originalImageColor;
-        if (text != null) text.color = originalTextColor;
+        if (ChangeColor)
+        {
+            if (image != null) image.color = originalImageColor;
+            if (text != null) text.color = originalTextColor;
+        }
 
         if (shakeStrength > 0)
         {
             transform.localPosition = _originalPosition + (Vector3)(Random.insideUnitCircle * shakeStrength * ShakeStrengthFactor);
             shakeStrength -= Time.deltaTime * ShakeSpeed;
-            if (image != null) image.color = new Color(ShakeColor.r, ShakeColor.g, ShakeColor.b, originalImageColor.a);
-            if (text != null) text.color = new Color(255f, 0f, 0f, originalTextColor.a);
+            if (ChangeColor)
+            {
+                if (image != null) image.color = new Color(ShakeColor.r, ShakeColor.g, ShakeColor.b, originalImageColor.a);
+                if (text != null) text.color = new Color(255f, 0f, 0f, originalTextColor.a);
+            }
         }
         else
         {
@@ -52,5 +61,10 @@ public class CanvasShake : MonoBehaviour
     public void Shake(float value)
     {
         shakeStrength = value;
+    }
+
+    public void Stop()
+    {
+        shakeStrength = 0f;
     }
 }

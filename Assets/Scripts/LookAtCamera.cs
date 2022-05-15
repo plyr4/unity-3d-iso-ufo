@@ -8,6 +8,6 @@ public static class LookAtCamera
     {
         transform.LookAt(Camera.main.transform);
         Quaternion q = transform.rotation;
-        transform.rotation = Quaternion.Euler(-q.eulerAngles.x, q.eulerAngles.y + 180, -q.eulerAngles.z);
+        transform.rotation = Quaternion.Euler(-q.eulerAngles.x, q.eulerAngles.y - 180, -q.eulerAngles.z);
     }
 }

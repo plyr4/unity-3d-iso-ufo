@@ -14,11 +14,13 @@ public class TractorBeam : MonoBehaviour
 
     [Header("Events")]
     [SerializeField]
+    private GameEvent _beamInitalizeEvent;
+    [SerializeField]
     private GameEvent _tetherEvent;
     [SerializeField]
     private GameEvent _untetherEvent;
     [SerializeField]
-    private GameEvent _beamFullEvent;
+    private GameEvent _denyTetherEvent;
     [SerializeField]
     private GameEvent _beamableFixedUpdateEvent;
     [SerializeField]
@@ -168,6 +170,9 @@ public class TractorBeam : MonoBehaviour
 
         // initialize beam properties
         UpdateBeamProperties();
+
+        // raise event
+        _beamInitalizeEvent?.Invoke(this);
     }
 
     private void Update()
@@ -284,7 +289,7 @@ public class TractorBeam : MonoBehaviour
                 if (_tetheredBeamables.Count >= MaxBeamableObjects)
                 {
                     DenyTether(obj);
-                    _beamFullEvent?.Invoke();
+                    _denyTetherEvent?.Invoke();
                     continue;
                 }
 
