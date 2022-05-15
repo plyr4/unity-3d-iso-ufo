@@ -26,8 +26,8 @@ MonoBehaviour:
   _angularYMotion: 2
   _angularZMotion: 2
   _linearLimitSpring:
-    _spring: 100
-    _damper: 100
+    _spring: 15
+    _damper: 5
   _linearLimit:
     _limit: 0.5
     _bounciness: 0

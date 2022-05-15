@@ -104,6 +104,9 @@ public class TetherJointScriptableObject : ScriptableObject
         // add the tether if necessary
         if (tetherJoint == null) tetherJoint = beamableObject.AddComponent<ConfigurableJoint>();
 
+        if (beam != null) tetherJoint.connectedBody = beam.GetTetherAnchor();
+
+
         // apply the constant properties
         ApplyTetherJointProperties(tetherJoint);
 
@@ -119,21 +122,13 @@ public class TetherJointScriptableObject : ScriptableObject
     {
         if (tetherJoint == null) return;
 
-        // Rigidbody
-        // tetherJoint.connectedBody = _connectedBody;
-
-        // Articulation Body
-        tetherJoint.connectedArticulationBody = _connectedArticulationBody;
-
         // Vector3
-        // tetherJoint.anchor = _anchor;
         tetherJoint.axis = _axis;
 
         // bool
         tetherJoint.autoConfigureConnectedAnchor = _autoConfigureConnectedAnchor;
 
         // Vector3
-        // tetherJoint.connectedAnchor = _connectedAnchor;
         tetherJoint.secondaryAxis = _secondaryAxis;
 
         // ConfigurableJointMotion
@@ -247,9 +242,22 @@ public class TetherJointScriptableObject : ScriptableObject
     {
         // assign linear limit
         SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
-        linearLimitSpring.spring = 3f;
+        linearLimitSpring.spring = 5f;
         linearLimitSpring.damper = 1f;
         tetherJoint.linearLimitSpring = linearLimitSpring;
+
+        JointDrive yDrive = tetherJoint.yDrive;
+        yDrive.positionSpring = 10f;
+        tetherJoint.yDrive =  yDrive;
+
+        JointDrive xDrive = tetherJoint.xDrive;
+        xDrive.positionSpring = 10f;
+        tetherJoint.xDrive =  xDrive;
+
+        JointDrive zDrive = tetherJoint.zDrive;
+        zDrive.positionSpring = 10f;
+        tetherJoint.zDrive =  zDrive;
+
 
         // retract the connected anchor over time
         tetherJoint.connectedAnchor = Vector3.Lerp(tetherJoint.connectedAnchor, Vector3.zero, Time.deltaTime * beam.RetractionSpeed);

@@ -10,7 +10,7 @@ public class SerializedJointDrive
 
     public static implicit operator JointDrive(SerializedJointDrive c)
     {
-        return new JointDrive() { positionSpring = c._positionSpring, positionDamper = c._positionDamper };
+        return new JointDrive() { positionSpring = c._positionSpring, positionDamper = c._positionDamper, maximumForce = c._maximumForce };
     }
     public static explicit operator SerializedJointDrive(JointDrive c)
     {
