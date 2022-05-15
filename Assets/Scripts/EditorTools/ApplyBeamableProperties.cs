@@ -7,9 +7,10 @@ public class ApplyBeamableProperties : MonoBehaviour
     void Reset()
     {
         GetComponent<Rigidbody>().isKinematic = true;
+        GetComponent<ObjectRenderSnapable>().SnapEulerAngles = false;
         gameObject.layer = 8;
         RequireCollider();
-        GlobalObjects.Instance()._objectSaver.RemoveAndApplyBeamProperties(gameObject);
+        GlobalObjects.Instance._objectSaver?.RemoveAndApplyBeamProperties(gameObject);
     }
 
     void RequireCollider()

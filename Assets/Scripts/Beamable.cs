@@ -17,8 +17,8 @@ public class Beamable
         // set internal object
         _gameObject = obj;
 
-        // create joint tether
-        _tether = TetherJoints.CreateTether(obj, beam);
+        // create joint tether using the scriptable object
+        _tether = GlobalObjects.Instance._tetherJoint.CreateTether(obj, beam);
 
         // ensure mesh colliders are convex
         MeshColliders.SetMeshCollidersToConvex(_gameObject);
@@ -42,31 +42,34 @@ public class Beamable
     public void HandleUpdate(TractorBeam beam, GameEvent updateGameEvent)
     {
         // draw the beam
-        if (beam.DrawJoints) _line = TetherJoints.DrawObjectJointLine(beam, _gameObject, _line, _tether);
-        else TetherJoints.ClearJointLine(_line);
+        if (beam.DrawJoints) _line = DrawTetherJoints.DrawObjectJointLine(beam, _gameObject, _line, _tether);
+        else DrawTetherJoints.ClearJointLine(_line);
 
+        // raise event
         updateGameEvent?.Invoke(beam, this);
     }
 
     public void HandleFixedUpdate(TractorBeam beam, GameEvent fixedUpdateGameEvent)
     {
+        // update tether properties
         UpdateTether(beam);
+
+        // slow the object
         SlowVelocity(beam);
+
+        // raise event
         fixedUpdateGameEvent?.Invoke(beam, this);
     }
 
     public void UpdateTether(TractorBeam beam)
     {
         if (_tether == null) return;
-        if (beam.TrackBeamableObjectJointChanges) TetherJoints.UpdateConstantJointProperties(_tether, _retract);
-        TetherJoints.UpdateJointProperties(_tether, beam, _retract);
+        
+        // apply constant properties
+        if (beam.TrackBeamableObjectJointChanges) GlobalObjects.Instance._tetherJoint.ApplyTetherJointProperties(_tether);
 
-        // this controls joint retraction
-        // when fully retracted the beamable is absorbed
-        if (_retract)
-        {
-            TetherJoints.RetractJoint(beam, _tether);
-        }
+        // apply dynamic properties
+        GlobalObjects.Instance._tetherJoint.UpdateDynamicTetherJointProperties(_tether, beam, _retract);
     }
 
     public void SlowVelocity(TractorBeam beam)
@@ -89,7 +92,11 @@ public class Beamable
         _gameObject.layer = 8;
 
         _rb.mass = _originalMass;
-        TetherJoints.ClearJointLine(_line);
+
+        // clear the line renderer
+        DrawTetherJoints.ClearJointLine(_line);
+
+        // detroy the tether joint
         if (_tether != null) GameObject.Destroy(_tether);
     }
 

@@ -2,52 +2,53 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteInEditMode]
+[ExecuteAlways]
 public class GlobalObjects : MonoBehaviour
 {
-    public static GlobalObjects _instance { get; private set; }
+    [SerializeField]
+    public TetherJointScriptableObject _tetherJoint;
 
     [SerializeField]
-    public ConfigurableJoint _tetherJoint;
-    [SerializeField]
-    public ObjectSaver _objectSaver;
+    public ObjectSaverScriptableObject _objectSaver;
 
-    private void Awake()
+    private static GlobalObjects _instance;
+
+    public static GlobalObjects Instance
     {
-        if (_instance != null && _instance != this)
+        get
         {
-            Destroy(this);
-            return;
-        }
+            // attempt to locate the singleton
+            if (_instance == null)
+            {
+                _instance = (GlobalObjects)FindObjectOfType(typeof(GlobalObjects));
+            }
 
-        InitTetherJointProperties();
-        InitObjectSaver();
-        _instance = this;
+            // create a new singleton
+            if (_instance == null)
+            {
+                _instance = (new GameObject("GlobalObjects")).AddComponent<GlobalObjects>();
+                _instance.Initialize();
+            }
+
+            // return singleton
+            return _instance;
+        }
     }
 
-    public static GlobalObjects Instance()
+    private void Initialize()
     {
-        if (_instance == null) return new GlobalObjects();
-        _instance.InitTetherJointProperties();
-        _instance.InitObjectSaver();
-        return _instance;
+        InitTetherJointProperties();
+        InitObjectSaver();
     }
 
     private void InitTetherJointProperties()
     {
-        // attempt to use the present component
-        if (_tetherJoint == null) _tetherJoint = gameObject.GetComponent<ConfigurableJoint>();
-
-        if (_tetherJoint == null) Debug.LogWarning("GlobalObjects initialization error: _tetherJoint:ConfigurableJoint not initialized");
+        if (_tetherJoint == null) Debug.LogWarning("GlobalObjects initialization error: _tetherJoint:TetherJointScriptableObject not initialized");
     }
 
     private void InitObjectSaver()
     {
-        // attempt to use the present component
-        if (_objectSaver == null) _objectSaver = gameObject.GetComponent<ObjectSaver>();
-
-        // apply a default in the case that nothing was provided
-        if (_objectSaver == null) _objectSaver = gameObject.AddComponent<ObjectSaver>();
-
-        if (_objectSaver == null) Debug.LogWarning("GlobalObjects initialization error: _objectSaver:ObjectSaver not initialized");
+        if (_objectSaver == null) Debug.LogWarning("GlobalObjects initialization error: _objectSaver:ObjectSaverScriptableObject not initialized");
     }
 }

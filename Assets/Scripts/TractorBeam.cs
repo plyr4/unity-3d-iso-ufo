@@ -355,8 +355,8 @@ public class TractorBeam : MonoBehaviour
     private void UpdateBeamables()
     {
         // draw or clear the beam line
-        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && DrawJoints) _line = TetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
-        else TetherJoints.ClearJointLine(_line);
+        if (_tetheredBeamables.Count > 0 && IsHoldingUnretractedBeamables() && DrawJoints) _line = DrawTetherJoints.DrawBeamAnchorLine(this, gameObject, _line);
+        else DrawTetherJoints.ClearJointLine(_line);
 
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
@@ -395,7 +395,7 @@ public class TractorBeam : MonoBehaviour
     {
         // TODO: MAKE better
         // perhaps bring back the death sphere
-        float diff = Vector3.Distance(joint.transform.position, joint.connectedBody.transform.position);
+        float diff = Vector3.Distance(joint.transform.position - joint.anchor, joint.connectedBody.transform.position);
         return diff <= 2.5f && joint.connectedAnchor.y <= 0.1f;
     }
 

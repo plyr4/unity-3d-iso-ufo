@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7bcfe4e8b745ab42a5c4692e004023a, type: 3}
+  m_Name: Default Tether Joint
+  m_EditorClassIdentifier: 
+  _connectedBody: {fileID: 0}
+  _connectedArticulationBody: {fileID: 0}
+  _anchor: {x: 0, y: 0, z: 0}
+  _axis: {x: 1, y: 0, z: 0}
+  _autoConfigureConnectedAnchor: 0
+  _connectedAnchor: {x: 0, y: 0, z: 0}
+  _secondaryAxis: {x: 0, y: 1, z: 0}
+  _xMotion: 1
+  _yMotion: 1
+  _zMotion: 1
+  _angularXMotion: 2
+  _angularYMotion: 2
+  _angularZMotion: 2
+  _linearLimitSpring:
+    _spring: 100
+    _damper: 100
+  _linearLimit:
+    _limit: 0.5
+    _bounciness: 0
+    _contactDistance: 0
+  _angularXLimitSpring:
+    _spring: 0
+    _damper: 0
+  _lowAngularXLimit:
+    _limit: 0
+    _bounciness: 0
+    _contactDistance: 0
+  _highAngularXLimit:
+    _limit: 0
+    _bounciness: 0
+    _contactDistance: 0
+  _angularYZLimitSpring:
+    _spring: 0
+    _damper: 0
+  _angularYLimit:
+    _limit: 0
+    _bounciness: 0
+    _contactDistance: 0
+  _angularZLimit:
+    _limit: 0
+    _bounciness: 0
+    _contactDistance: 0
+  _targetPosition: {x: 0, y: 0, z: 0}
+  _targetVelocity: {x: 0, y: 0, z: 0}
+  _xDrive:
+    _positionSpring: 2
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _yDrive:
+    _positionSpring: 3
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _zDrive:
+    _positionSpring: 2
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _targetRotation: {x: 0, y: 0, z: 0, w: 1}
+  _targetAngularVelocity: {x: 0, y: 0, z: 0}
+  _rotationDriveMode: 0
+  _angularXDrive:
+    _positionSpring: 0
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _angularYZDrive:
+    _positionSpring: 0
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _slerpDrive:
+    _positionSpring: 0
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _projectionMode: 1
+  _projectionDistance: 0.01
+  _projectionAngle: 1
+  _configuredInWorldSpace: 1
+  _swapBodies: 0
+  _breakForce: Infinity
+  _breakTorque: Infinity
+  _enableCollision: 0
+  _enablePreprocessing: 1
+  _massScale: 10
+  _connectedMassScale: 1
