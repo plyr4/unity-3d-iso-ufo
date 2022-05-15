@@ -64,12 +64,15 @@ public class Beamable
     public void UpdateTether(TractorBeam beam)
     {
         if (_tether == null) return;
-        
-        // apply constant properties
-        if (beam.TrackBeamableObjectJointChanges) GlobalObjects.Instance._tetherJoint.ApplyTetherJointProperties(_tether);
 
-        // apply dynamic properties
-        GlobalObjects.Instance._tetherJoint.UpdateDynamicTetherJointProperties(_tether, beam, _retract);
+        if (beam.TrackBeamableObjectJointChanges)
+        {
+            // apply constant properties
+            GlobalObjects.Instance._tetherJoint.ApplyTetherJointProperties(_tether);
+
+            // apply dynamic properties
+            GlobalObjects.Instance._tetherJoint.UpdateDynamicTetherJointProperties(_tether, beam, _retract);
+        }
     }
 
     public void SlowVelocity(TractorBeam beam)
@@ -84,6 +87,18 @@ public class Beamable
 
         // TODO: constants
         _gameObject.layer = 9;
+
+        // TODO: scale the mesh down to fit in a sphere of some size
+        MeshFilters.ScaleChildObjectToStaticBounds(_gameObject, 1f);
+    }
+
+    public Vector3 ScaleMeshToFitSphere()
+    {
+        Vector3 scale = _gameObject.transform.localScale;
+
+
+
+        return scale;
     }
 
     public void Untether()

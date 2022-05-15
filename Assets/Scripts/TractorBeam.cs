@@ -48,7 +48,7 @@ public class TractorBeam : MonoBehaviour
     [SerializeField]
     public bool LockFire;
     [SerializeField]
-    private bool LockAltFire;
+    public bool LockAltFire;
     [Space]
 
     [SerializeField]
@@ -399,9 +399,16 @@ public class TractorBeam : MonoBehaviour
     public bool IsRetracted(ConfigurableJoint joint)
     {
         // TODO: MAKE better
-        // perhaps bring back the death sphere
-        float diff = Vector3.Distance(joint.transform.position - joint.anchor, joint.connectedBody.transform.position);
-        return diff <= 2.5f && joint.connectedAnchor.y <= 0.1f;
+        Vector3 directedAnchor = joint.gameObject.transform.TransformDirection(joint.anchor);
+        Vector3 anchorPosition = joint.gameObject.transform.position + directedAnchor;
+        float diff = Vector3.Distance(anchorPosition, joint.connectedBody.transform.position);
+        Debug.Log("-----start----");  
+        Debug.Log(diff);
+        Debug.Log(joint.anchor);
+        Debug.Log(directedAnchor);
+        Debug.Log(anchorPosition);
+        Debug.Log("-----end----");
+        return diff <= (1f) && joint.connectedAnchor.y <= 0.1f;
     }
 
     private void AbsorbBeamable(Beamable beamable)
@@ -520,6 +527,7 @@ public class TractorBeam : MonoBehaviour
     private void GizmosDrawTetherJoints()
     {
         if (_tetheredBeamables == null) return;
+        bool connectedBodyDrawn = false;
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
             // joint.anchor
@@ -531,6 +539,12 @@ public class TractorBeam : MonoBehaviour
             // should be in the beam
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position + beamable._tether.connectedAnchor, 0.2f);
+
+            if (!connectedBodyDrawn)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position, 0.2f);
+            }
         }
     }
 }

@@ -217,7 +217,11 @@ public class TetherJointScriptableObject : ScriptableObject
     {
         // set the object anchor to the mesh center
         Vector3 _meshCenter = MeshFilters.GetAnchorPivotPosition(tetherJoint.gameObject.GetComponent<MeshFilter>());
-        tetherJoint.anchor = _meshCenter;
+
+        // TODO: this added as a fix to retraction
+        //  TODO: ensure this isnt bugged
+        float largestScaleDimension = Mathf.Max(tetherJoint.transform.localScale.x, Mathf.Max(tetherJoint.transform.localScale.y, tetherJoint.transform.localScale.z));
+
 
         // set the connected body to the beam anchor
         tetherJoint.connectedBody = beam.GetTetherAnchor();
@@ -226,9 +230,11 @@ public class TetherJointScriptableObject : ScriptableObject
         {
             // retract the tether
             RetractJoint(tetherJoint, beam);
+            // tetherJoint.anchor = Vector3.Lerp(tetherJoint.anchor, -_meshCenter * largestScaleDimension, Time.deltaTime * beam.RetractionSpeed);
         }
         else
         {
+            tetherJoint.anchor = _meshCenter * largestScaleDimension;
             // set connected anchor to the beam collection depth
             tetherJoint.connectedAnchor = -Vector3.up * beam.AnchorDepth();
         }

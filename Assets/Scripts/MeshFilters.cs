@@ -72,5 +72,38 @@ public static class MeshFilters
 
         meshFilter.transform.localScale = scale;
     }
+
+    
+    public static void ScaleChildObjectToStaticBounds(GameObject obj, float size)
+    {
+        // TODO: use input size scale
+        MeshFilter meshFilter = obj.GetComponentInChildren<MeshFilter>();
+
+        if (meshFilter == null) return;
+
+        Mesh mesh = meshFilter.mesh;
+        Bounds bounds = mesh.bounds;
+        
+        // TODO: use input size scale
+        var szA = new Vector3 (size, size, size);
+        
+        var szB = bounds.size;
+
+        var scale = meshFilter.transform.localScale;
+
+        float largestMeshDimension = Mathf.Max(szB.x, Mathf.Max(szB.y, szB.z));
+        float largestScaleDimension = Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+
+        // TODO: make this smarter
+        if (largestMeshDimension < 1f) return;
+        if (largestScaleDimension < 1f) return;
+
+        // TODO: use input size scale
+        float scaleFactor = 1f / largestMeshDimension;
+
+        scale *= scaleFactor;
+
+        meshFilter.transform.localScale = scale;
+    }
 }
 
