@@ -120,13 +120,13 @@ public class TetherJointScriptableObject : ScriptableObject
         if (tetherJoint == null) return;
 
         // Rigidbody
-        tetherJoint.connectedBody = _connectedBody;
+        // tetherJoint.connectedBody = _connectedBody;
 
         // Articulation Body
         tetherJoint.connectedArticulationBody = _connectedArticulationBody;
 
         // Vector3
-        tetherJoint.anchor = _anchor;
+        // tetherJoint.anchor = _anchor;
         tetherJoint.axis = _axis;
 
         // bool

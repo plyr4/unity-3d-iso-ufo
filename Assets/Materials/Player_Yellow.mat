@@ -11,12 +11,13 @@ Material:
   m_Shader: {fileID: 4800000, guid: 71d6765ad72e11541bc1448c891bbcf9, type: 3}
   m_ValidKeywords:
   - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
+  - RECEIVE_SHADOWS_ON
   - USE_OBJECT_POSITION_ON
   m_InvalidKeywords:
-  - RECEIVE_SHADOWS_ON
-  - RECEIVE_SHADOWS_ON
-  - RECEIVE_SHADOWS_ON
-  - RECEIVE_SHADOWS_ON
   - USE_EMISSION_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
+#if UNITY_EDITOR
 using UnityEditor.SceneManagement;
+#endif
 
 [System.Serializable]
 [CreateAssetMenu(menuName = "Object Saver", fileName = "New Object Saver")]
