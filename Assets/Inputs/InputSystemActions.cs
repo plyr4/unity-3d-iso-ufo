@@ -218,7 +218,7 @@ public partial class @InputSystemActions : IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""c8fcd86e-dcfd-4f88-8e93-b638cdbf3320"",
-                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
@@ -328,7 +328,7 @@ public partial class @InputSystemActions : IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""073e00bc-3d1b-4c0a-878b-4967211a1d12"",
-                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",

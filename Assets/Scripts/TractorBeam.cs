@@ -49,6 +49,8 @@ public class TractorBeam : MonoBehaviour
     public bool LockFire;
     [SerializeField]
     public bool LockAltFire;
+    [SerializeField]
+    public bool ShouldAbsorbBeamables = true;
     [Space]
 
     [SerializeField]
@@ -186,9 +188,10 @@ public class TractorBeam : MonoBehaviour
         UpdateBeamProperties();
         FixedUpdateBeamables();
         ResetLightColors();
-        if (Fire()) FireBeam();
-        if (!Fire()) ReleaseBeam();
-        if (AltFire()) RetractBeam();
+        // TODO: experimenting with controls
+        if (!AltFire()) FireBeam();
+        if (AltFire()) ReleaseBeam();
+        if (Fire()) RetractBeam();
         AbsorbBeamables();
     }
 
@@ -237,9 +240,16 @@ public class TractorBeam : MonoBehaviour
         return LockAltFire || _input.altFire;
     }
 
+    private bool AltAltFire()
+    {
+        //TODO:
+        // return LockAltFire || _input.altFire;
+        return true;
+    }
+
     private void UpdateBeamStrength()
     {
-        _strength = Mathf.Clamp(_strength += (LockStrength ? 0 : (Fire() ? 1 : -1)) * StrengthGrowthRate * Time.deltaTime, 0f, 1f);
+        _strength = Mathf.Clamp(_strength += (LockStrength ? 0 : (!AltFire() ? 1 : -1)) * StrengthGrowthRate * Time.deltaTime, 0f, 1f);
     }
 
     private void UpdateBeamProperties()
@@ -268,9 +278,6 @@ public class TractorBeam : MonoBehaviour
 
         // control how much strength is required for the beam to function
         if (_strength < StrengthToGrab) return;
-
-        // apply visual effects
-        ApplyBeamColors();
 
         // use cone cast to capture objects in the beam cone
         _inBeam = physics.ConeCastAll(
@@ -349,6 +356,9 @@ public class TractorBeam : MonoBehaviour
 
     private void RetractBeam()
     {
+        // apply visual effects
+        ApplyBeamColors();
+
         // pull up any objects in the beam
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList()) beamable.Retract();
     }
@@ -387,10 +397,10 @@ public class TractorBeam : MonoBehaviour
         // absorb any retracted beamables
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
-            if (beamable._retract && IsRetracted(beamable._tether))
+            if (beamable._retract && IsRetracted(beamable._tether) && ShouldAbsorbBeamables)
             {
                 AbsorbBeamable(beamable);
-                _pickupPower += MeshFilters.GetMeshFilterLargestBound(beamable._meshFilter) * 0.02f;
+                _pickupPower += beamable._weight * 0.2f;
                 _absorbBeamableEvent?.Invoke(this, beamable);
             }
         }
@@ -399,16 +409,10 @@ public class TractorBeam : MonoBehaviour
     public bool IsRetracted(ConfigurableJoint joint)
     {
         // TODO: MAKE better
-        Vector3 directedAnchor = joint.gameObject.transform.TransformDirection(joint.anchor);
-        Vector3 anchorPosition = joint.gameObject.transform.position + directedAnchor;
-        float diff = Vector3.Distance(anchorPosition, joint.connectedBody.transform.position);
-        Debug.Log("-----start----");  
-        Debug.Log(diff);
-        Debug.Log(joint.anchor);
-        Debug.Log(directedAnchor);
-        Debug.Log(anchorPosition);
-        Debug.Log("-----end----");
-        return diff <= (1f) && joint.connectedAnchor.y <= 0.1f;
+        Vector3 anchorPosition = joint.gameObject.transform.TransformPoint(joint.anchor);
+
+        float diff = Vector3.Distance(joint.connectedBody.transform.position, anchorPosition);
+        return Mathf.Abs(diff) <= (0.9f) && joint.connectedAnchor.y <= 0.1f;
     }
 
     private void AbsorbBeamable(Beamable beamable)
@@ -530,21 +534,24 @@ public class TractorBeam : MonoBehaviour
         bool connectedBodyDrawn = false;
         foreach (Beamable beamable in _tetheredBeamables.Values.ToList())
         {
-            // joint.anchor
-            // should be in the center of the hanging object
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(beamable._gameObject.transform.position + beamable._gameObject.transform.TransformDirection(beamable._tether.anchor), 0.2f);
+            if (!connectedBodyDrawn)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position, 0.2f);
+            }
 
             // joint.connectedAnchor
             // should be in the beam
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position + beamable._tether.connectedAnchor, 0.2f);
 
-            if (!connectedBodyDrawn)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(beamable._tether.connectedBody.transform.position, 0.2f);
-            }
+            // joint.anchor
+            // should be in the center of the hanging object
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(beamable._gameObject.transform.position + beamable._gameObject.transform.TransformDirection(beamable._tether.anchor), 0.2f);
+
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(beamable._gameObject.transform.position, 0.2f);
         }
     }
 }

@@ -7,7 +7,11 @@ public class Beamable
     public bool _retract = false;
     public Rigidbody _rb;
     public float _originalMass;
+    private Vector3[] _vertices;
+    public float _currentScale;
+    public float _goalScale;
     public MeshFilter _meshFilter;
+    public float _weight;
 
     // TODO: optimize
     public LineRenderer _line;
@@ -17,19 +21,29 @@ public class Beamable
         // set internal object
         _gameObject = obj;
 
+        // mesh
+        _meshFilter = _gameObject.GetComponent<MeshFilter>();
+
+        // rigidbody
+        _rb = _gameObject.GetComponent<Rigidbody>();
+
         // create joint tether using the scriptable object
-        _tether = GlobalObjects.Instance._tetherJoint.CreateTether(obj, beam);
+        // this assigns the configurable joint to _tether
+        GlobalObjects.Instance._tetherJoint.CreateTether(beam, this);
 
         // ensure mesh colliders are convex
         MeshColliders.SetMeshCollidersToConvex(_gameObject);
 
         // physics properties
-        _rb = _gameObject.GetComponent<Rigidbody>();
         _rb.isKinematic = false;
         _originalMass = _rb.mass;
-
-        // mesh
-        _meshFilter = _gameObject.GetComponent<MeshFilter>();
+        _weight = MeshFilters.GetMeshFilterLargestBound(_meshFilter);
+        
+        // TODO: most likely bugged
+        // should start at 1f
+        _currentScale =  1f;
+        _goalScale =  ScaleFactor();
+        _vertices = MeshFilters.BaseVertices(_meshFilter);
 
         // TODO: constants
         _gameObject.layer = 8;
@@ -71,7 +85,7 @@ public class Beamable
             GlobalObjects.Instance._tetherJoint.ApplyTetherJointProperties(_tether);
 
             // apply dynamic properties
-            GlobalObjects.Instance._tetherJoint.UpdateDynamicTetherJointProperties(_tether, beam, _retract);
+            GlobalObjects.Instance._tetherJoint.UpdateDynamicTetherJointProperties(beam, this);
         }
     }
 
@@ -87,9 +101,6 @@ public class Beamable
 
         // TODO: constants
         _gameObject.layer = 9;
-
-        // TODO: scale the mesh down to fit in a sphere of some size
-        MeshFilters.ScaleChildObjectToStaticBounds(_gameObject, 1f);
     }
 
     public Vector3 ScaleMeshToFitSphere()
@@ -118,6 +129,23 @@ public class Beamable
     public float Size()
     {
         return Util.Round(MeshFilters.GetMeshFilterLargestBound(_meshFilter), 10f);
+    }
+
+
+    public float ScaleFactor()
+    {
+        Mesh mesh = _meshFilter.mesh;
+        Bounds bounds = mesh.bounds;
+        var szB = bounds.size;
+        float largestMeshDimension = Mathf.Max(szB.x, Mathf.Max(szB.y, szB.z));
+        return 1f / largestMeshDimension;
+    }
+
+    public void ScaleDown(float speed)
+    {
+        if (_goalScale > 1f) return;
+        _currentScale = Mathf.Lerp(_currentScale, _goalScale, Time.deltaTime * speed);
+        MeshFilters.ScaleVertices(_meshFilter,_currentScale ,  _vertices, false);
     }
 
     public GameObject DisplayObject()

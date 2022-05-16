@@ -1,18 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.ProBuilder;
 
 public static class MeshFilters
 {
     public static float GetObjectLargestBound(GameObject obj)
-    {   
+    {
         MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
         return meshFilter == null ? 0 : Mathf.Max(meshFilter.mesh.bounds.size.x, Mathf.Max(meshFilter.mesh.bounds.size.y, meshFilter.mesh.bounds.size.z));
     }
 
 
     public static float GetMeshFilterLargestBound(MeshFilter meshFilter)
-    {   
+    {
         return meshFilter == null ? 0 : Mathf.Max(meshFilter.mesh.bounds.size.x, Mathf.Max(meshFilter.mesh.bounds.size.y, meshFilter.mesh.bounds.size.z));
     }
 
@@ -72,38 +73,46 @@ public static class MeshFilters
 
         meshFilter.transform.localScale = scale;
     }
-
-    
-    public static void ScaleChildObjectToStaticBounds(GameObject obj, float size)
+    public static void ScaleVertices(MeshFilter meshFilter, float factor, Vector3[] baseVertices, bool recalculateNormals)
     {
-        // TODO: use input size scale
-        MeshFilter meshFilter = obj.GetComponentInChildren<MeshFilter>();
+        Mesh mesh = meshFilter.mesh;
+        if (baseVertices == null)
+            baseVertices = mesh.vertices;
 
-        if (meshFilter == null) return;
+        var vertices = new Vector3[baseVertices.Length];
+        for (var i = 0; i < vertices.Length; i++)
+        {
+            Vector3 vertex = baseVertices[i];
+            vertex.x = vertex.x * factor;
+            vertex.y = vertex.y * factor;
+            vertex.z = vertex.z * factor;
+
+            vertices[i] = vertex;
+        }
+
+        mesh.vertices = vertices;
+
+        if (recalculateNormals)
+            mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+    }
+    public static Vector3[] BaseVertices(MeshFilter meshFilter )
+    {
+        return meshFilter.mesh.vertices;
+    }
+
+    static float ScaleFactor(MeshFilter meshFilter)
+    {
 
         Mesh mesh = meshFilter.mesh;
         Bounds bounds = mesh.bounds;
-        
-        // TODO: use input size scale
-        var szA = new Vector3 (size, size, size);
-        
+
         var szB = bounds.size;
-
-        var scale = meshFilter.transform.localScale;
-
         float largestMeshDimension = Mathf.Max(szB.x, Mathf.Max(szB.y, szB.z));
-        float largestScaleDimension = Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
-
-        // TODO: make this smarter
-        if (largestMeshDimension < 1f) return;
-        if (largestScaleDimension < 1f) return;
-
-        // TODO: use input size scale
         float scaleFactor = 1f / largestMeshDimension;
 
-        scale *= scaleFactor;
 
-        meshFilter.transform.localScale = scale;
+        return scaleFactor;
     }
 }
 

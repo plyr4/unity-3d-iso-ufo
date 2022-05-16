@@ -94,3 +94,23 @@ MonoBehaviour:
   _enablePreprocessing: 1
   _massScale: 10
   _connectedMassScale: 1
+  RetractObjectShrinkSpeed: 2.5
+  _retractionLinearLimitSpring:
+    _spring: 15
+    _damper: 5
+  _retractionLinearLimit:
+    _limit: 0.1
+    _bounciness: 0
+    _contactDistance: 0
+  _retractionXDrive:
+    _positionSpring: 2
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _retractionYDrive:
+    _positionSpring: 3
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38
+  _retractionZDrive:
+    _positionSpring: 2
+    _positionDamper: 0
+    _maximumForce: 3.402823e+38

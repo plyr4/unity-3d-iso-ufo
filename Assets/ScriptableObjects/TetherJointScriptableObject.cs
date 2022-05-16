@@ -95,26 +95,36 @@ public class TetherJointScriptableObject : ScriptableObject
     [SerializeField]
     public float _connectedMassScale = 1f;
 
+    [Header("Retraction Settings")]
+    [SerializeField]
+    private float RetractObjectShrinkSpeed = 3f;
+    [SerializeField]
+    public SerializedSoftJointLimitSpring _retractionLinearLimitSpring;
+    [SerializeField]
+    public SerializedSoftJointLimit _retractionLinearLimit;
+    [SerializeField]
+    public SerializedJointDrive _retractionXDrive;
+    [SerializeField]
+    public SerializedJointDrive _retractionYDrive;
+    [SerializeField]
+    public SerializedJointDrive _retractionZDrive;
 
-    public ConfigurableJoint CreateTether(GameObject beamableObject, TractorBeam beam)
+    public void CreateTether(TractorBeam beam, Beamable beamable)
     {
         // attempt to fetch a tether
-        ConfigurableJoint tetherJoint = beamableObject.GetComponent<ConfigurableJoint>();
+        beamable._tether = beamable._gameObject.GetComponent<ConfigurableJoint>();
 
         // add the tether if necessary
-        if (tetherJoint == null) tetherJoint = beamableObject.AddComponent<ConfigurableJoint>();
+        if (beamable._tether == null) beamable._tether = beamable._gameObject.AddComponent<ConfigurableJoint>();
 
-        if (beam != null) tetherJoint.connectedBody = beam.GetTetherAnchor();
+        if (beam != null) beamable._tether.connectedBody = beam.GetTetherAnchor();
 
 
         // apply the constant properties
-        ApplyTetherJointProperties(tetherJoint);
+        ApplyTetherJointProperties(beamable._tether);
 
         // apply the dynamic properties
-        UpdateDynamicTetherJointProperties(tetherJoint, beam, false);
-
-        // return the joint
-        return tetherJoint;
+        UpdateDynamicTetherJointProperties(beam, beamable);
     }
 
 
@@ -213,59 +223,74 @@ public class TetherJointScriptableObject : ScriptableObject
     }
 
 
-    public void UpdateDynamicTetherJointProperties(ConfigurableJoint tetherJoint, TractorBeam beam, bool retract)
+    public void UpdateDynamicTetherJointProperties(TractorBeam beam, Beamable beamable)
     {
         // set the object anchor to the mesh center
-        Vector3 _meshCenter = MeshFilters.GetAnchorPivotPosition(tetherJoint.gameObject.GetComponent<MeshFilter>());
+        Vector3 _meshCenter = MeshFilters.GetAnchorPivotPosition(beamable._meshFilter);
 
         // TODO: this added as a fix to retraction
         //  TODO: ensure this isnt bugged
-        float largestScaleDimension = Mathf.Max(tetherJoint.transform.localScale.x, Mathf.Max(tetherJoint.transform.localScale.y, tetherJoint.transform.localScale.z));
+        float largestScaleDimension = Mathf.Max(beamable._gameObject.transform.localScale.x, Mathf.Max(beamable._gameObject.transform.localScale.y, beamable._gameObject.transform.localScale.z));
+        beamable._tether.anchor = _meshCenter * largestScaleDimension;
 
-
+        // Debug.Log(_meshCenter);
         // set the connected body to the beam anchor
-        tetherJoint.connectedBody = beam.GetTetherAnchor();
+        beamable._tether.connectedBody = beam.GetTetherAnchor();
 
-        if (retract)
+        if (beamable._retract)
         {
             // retract the tether
-            RetractJoint(tetherJoint, beam);
-            // tetherJoint.anchor = Vector3.Lerp(tetherJoint.anchor, -_meshCenter * largestScaleDimension, Time.deltaTime * beam.RetractionSpeed);
+            RetractJoint(beamable._tether, beam);
+
+            // TODO: scale the mesh down to fit in a sphere of some size
+            // SOMEHOW do not interfere with the anchor position
+            //    remove mesh, create child object, scale mesh?
+            beamable.ScaleDown(RetractObjectShrinkSpeed);
         }
         else
         {
-            tetherJoint.anchor = _meshCenter * largestScaleDimension;
             // set connected anchor to the beam collection depth
-            tetherJoint.connectedAnchor = -Vector3.up * beam.AnchorDepth();
+            beamable._tether.connectedAnchor = -Vector3.up * beam.AnchorDepth();
         }
 
         // set the mass scale to be proportional between the anchor and the object
-        tetherJoint.massScale = tetherJoint.connectedBody.mass / tetherJoint.gameObject.GetComponent<Rigidbody>().mass;
-        tetherJoint.connectedMassScale = 1f;
+        beamable._tether.massScale = beamable._tether.connectedBody.mass / beamable._tether.gameObject.GetComponent<Rigidbody>().mass;
+        beamable._tether.connectedMassScale = 1f;
     }
 
-    public static void RetractJoint(ConfigurableJoint tetherJoint, TractorBeam beam)
+    public void RetractJoint(ConfigurableJoint tetherJoint, TractorBeam beam)
     {
         // assign linear limit
-        SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
-        linearLimitSpring.spring = 5f;
-        linearLimitSpring.damper = 1f;
-        tetherJoint.linearLimitSpring = linearLimitSpring;
+        // SoftJointLimitSpring linearLimitSpring = new SoftJointLimitSpring();
+        // linearLimitSpring.spring = 5f;
+        // linearLimitSpring.damper = 1f;
+        tetherJoint.linearLimitSpring = _retractionLinearLimitSpring;
 
-        JointDrive yDrive = tetherJoint.yDrive;
-        yDrive.positionSpring = 10f;
-        tetherJoint.yDrive =  yDrive;
-
-        JointDrive xDrive = tetherJoint.xDrive;
-        xDrive.positionSpring = 10f;
-        tetherJoint.xDrive =  xDrive;
-
-        JointDrive zDrive = tetherJoint.zDrive;
-        zDrive.positionSpring = 10f;
-        tetherJoint.zDrive =  zDrive;
+        // SoftJointLimit linearLimit = new SoftJointLimit();
+        // linearLimit.limit = 0;
+        tetherJoint.linearLimit = _retractionLinearLimit;
 
 
+        // JointDrive xDrive = tetherJoint.xDrive;
+        // xDrive.positionSpring = 10f;
+        tetherJoint.xDrive = _retractionXDrive;
+
+        // JointDrive yDrive = tetherJoint.yDrive;
+        // yDrive.positionSpring = 10f;
+        tetherJoint.yDrive = _retractionYDrive;
+
+
+        // JointDrive zDrive = tetherJoint.zDrive;
+        // zDrive.positionSpring = 10f;
+        tetherJoint.zDrive = _retractionZDrive;
+
+
+        float largestScaleDimension = Mathf.Max(tetherJoint.transform.localScale.x, Mathf.Max(tetherJoint.transform.localScale.y, tetherJoint.transform.localScale.z));
+        Vector3 _meshCenter = MeshFilters.GetAnchorPivotPosition(tetherJoint.gameObject.GetComponent<MeshFilter>());
+        // tetherJoint.anchor = _meshCenter * largestScaleDimension * -1f;
+        // Vector3 destination = _meshCenter * largestScaleDimension;
+        Vector3 destination = Vector3.zero;
         // retract the connected anchor over time
-        tetherJoint.connectedAnchor = Vector3.Lerp(tetherJoint.connectedAnchor, Vector3.zero, Time.deltaTime * beam.RetractionSpeed);
+        tetherJoint.connectedAnchor = Vector3.Lerp(tetherJoint.connectedAnchor, destination, Time.deltaTime * beam.RetractionSpeed);
     }
 }

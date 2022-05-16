@@ -138,6 +138,16 @@ public class PerformanceTests : MonoBehaviour
         return _tractorBeam.LockFire;
     }
 
+    public void ToggleBeamShouldAbsorb()
+    {
+        _tractorBeam.ShouldAbsorbBeamables = !_tractorBeam.ShouldAbsorbBeamables;
+    }
+    
+    public bool BeamShouldAbsorb()
+    {
+        return _tractorBeam.ShouldAbsorbBeamables;
+    }
+
     public void LockAltFire()
     {
         _tractorBeam.LockAltFire = true;

@@ -12,6 +12,10 @@ public class PerformanceTestsEditor : Editor
         {
             _performanceTests.ToggleBeamLock();
         }
+        if (GUILayout.Button(string.Format("{0}", _performanceTests.BeamShouldAbsorb() ? "Stop absorbing objects" : "Absorb objects")))
+        {
+            _performanceTests.ToggleBeamShouldAbsorb();
+        }
         if (GUILayout.Button(string.Format("Tether {0} small objects", _performanceTests.NumberToTether)))
         {
             _performanceTests.TetherSmallObjects(_performanceTests.NumberToTether);
